@@ -15,6 +15,7 @@ library(ggbiplot)
 library(cluster)
 library(mltools)
 library(data.table)
+library(vegan)
 
 
 #load full data and view it#
