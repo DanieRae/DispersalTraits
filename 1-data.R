@@ -15,6 +15,8 @@ library(ggbiplot)
 library(cluster)
 library(mltools)
 library(data.table)
+library(vegan)
+library(gclus)
 
 
 #load full data and view it#
@@ -33,13 +35,13 @@ rownames(atlantic.fish.traits) <- atlantic.fish.traits[,1]
 atlantic.fish.traits[,1] <- NULL
 
 
-old_rownames <- rownames(fish.traits)
+old_rownames <- rownames(atlantic.fish.traits)
 new_rownames <- unlist(lapply(lapply(str_split(old_rownames, " "), 
                                       FUN = str_sub, 1, 3), paste0, collapse = "_"))
 new_rownames[new_rownames == "Myo_sco"] <- c("Myo_sco_1", "Myo_sco_2")
-rownames(fish.traits) <- new_rownames
+rownames(atlantic.fish.traits) <- new_rownames
  
-norm <- decostand(fish.traits, "normalize")
+norm <- decostand(atlantic.fish.traits, "normalize")
 
 #quick mutate to remove negative values in these columns#
 atlantic.fish.traits <- atlantic.fish.traits %>%
@@ -51,5 +53,5 @@ atlantic.fish.traits <- atlantic.fish.traits %>%
 
 fish.traits <- select(atlantic.fish.traits, -c ("Genus","Subfamily", "Family", "Order", "Class", "Phylum","Atlantic..Northwest","Common", "DemersPelagRef", "MigratRef", "DepthRangeRef", "DepthComRef", "VerticalMoveRef", "LatMin", "LatMax", "LatRef", "LongevityWildRef", "MaxLengthRef", "CommonLengthRef", "MainCatchingMethod", "II", "MSeines", "MGillnets", "MCastnets", "MTraps", "MTrawls", "MDredges", "MLiftnets", "MHooksLines", "MSpears", "MOther", "MobilityRef", "FecundityRef", "SpawnRef", "LarvalRef", "LLRef", "LVRef", "PLDRef", "ADRef", "RaftingRef", "SchoolingRef", "Notes", "Comments", "Website.Link"))
 
-#Veiw current data format#
+#View current data format#
 View(fish.traits)
