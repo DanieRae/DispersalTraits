@@ -66,13 +66,14 @@ heatmap(
 
 # Shameless code steal from numerical ecology in R
 
-# Reorder clusters doesn't seem important
--------------------------------
+# Reorder clusters doesn't seem important -------------------------------
 
-fish.traits.noDispersal.UPGMA.reordered <- reorder.hclust(fish.traits.UPGMA.noDispersal, fish.traits.dist.noDispersal)
+fish.traits.noDispersal.UPGMA.reordered <- reorder(fish.traits.UPGMA.noDispersal, 
+                                                   fish.traits.dist.noDispersal)
 
 
-fish.traits.60percent.UPGMA.reordered <- reorder.hclust(fish.traits.UPGMA.60percent, fish.traits.dist.60percent)
+fish.traits.60percent.UPGMA.reordered <- reorder(fish.traits.UPGMA.60percent, 
+                                                 fish.traits.dist.60percent)
 
 plot(fish.traits.60percent.UPGMA.reordered, hang =-1)
 
@@ -84,8 +85,7 @@ plot(fish.traits.60percent.UPGMA.reordered, hang =-1)
 fish_60clust <- fish.traits.UPGMA.60percent
 
 Si <- numeric(nrow(fish.traits.60percent))
-for (k in 2:(nrow(fish.traits.60percent)-1))
-{
+for (k in 2:(nrow(fish.traits.60percent)-1)) {
   sil <- silhouette(cutree(fish_60clust, k=k), fish.traits.dist.60percent)
   Si[k] <- summary(sil)$avg.width
 }
@@ -167,7 +167,7 @@ fish.traits.60percent.hot.dist <-gowdis(fish.traits.60percent.hot, asym.bin = NU
 
 # PCOA two function produce similar plots, cmdscale has open circles and pcoa uses the species names 
 
-
+# -------------------------------------------------------------------------
 
 ## CMDSCALE pcoa method with ggplot 
 
@@ -178,22 +178,53 @@ fish.cdm.eig <- round (fish.cmd$eig/sum(fish.cmd$eig)*100,1)
 fish.cmd.values <- fish.cmd$points
 
 fish.cmd.data <- data.frame(Sample = rownames(fish.cmd.values), 
-                             X= fish.cmd.values [,1], 
-                             Y= fish.cmd.values [,2])
+                            X= fish.cmd.values [,1], 
+                            Y= fish.cmd.values [,2])
 fish.cmd.data$clusterID <- clust.fish$clusterID
 
-plot1 <- ggplot(data =fish.cmd.data, aes (x=X, y=Y, color = clusterID)) +
+plot1 <- ggplot(data =fish.cmd.data, aes (x=X, y=Y, 
+                                          color = clusterID)
+                ) +
   geom_point(size =3)+
   #geom_text()+
   theme_bw()+
   xlab(paste("PCoA 1 -",fish.cdm.eig[1], "%", sep ="" ))+
   ylab(paste("PCoA 2 -",fish.cdm.eig[2], "%", sep ="" ))+
-  ggtitle("PCOA")
-  
-plot1 + geom_segment(data = fish.traits.60percent,
-                     aes(x = 0, xend = PCoA 1, y = 0, yend = PCoA 2),
-                     arrow = arrow(length = unit(0.25, "cm")), colour = "grey")
+  ggtitle("PCOA") +
+  geom_path() + 
+  theme(legend.position="none", asp=1) +
+  scale_color_grey()
 
+# plot1
+
+# Code taken from ape::biplot.pcoa
+get_U_matrix <- function(Y, Eig, vectors, plot.axes=c(1,2), 
+                         dir.axis1=1, dir.axis2=1){
+  # browser()
+  diag.dir <- diag(c(dir.axis1,dir.axis2))
+  vectors[,plot.axes] <- vectors[,plot.axes] %*% diag.dir
+  n <- nrow(Y)
+  points.stand <- scale(vectors[,plot.axes])
+  S <- cov(Y, points.stand)
+  U <- S %*% diag((Eig[plot.axes]/(n-1))^(-0.5))
+  colnames(U) <- colnames(vectors[,plot.axes])
+  return(U)
+}
+
+U <-  tidyr::drop_na(as.data.frame(
+  get_U_matrix(scale(fish.traits.60percent.hot), fish.cdm.eig, fish.cmd.values)))/5 
+colnames(U) <- c("x", "y")
+U$var_name <- rownames(U)
+
+plot1 + geom_segment(data = U,
+                     aes(x = 0, xend = x, 
+                         y = 0, yend = y),
+                     arrow = arrow(length = unit(0.25, "cm")), colour = "red") +
+  geom_text(data = U,
+             aes(x = x*1.1, y = y*1.1, 
+                 label = stringr::str_wrap(var_name,20)), colour = "red")
+  
+# -------------------------------------------------------------------------
 
 # Biplot with pcoa method using lingoes correction
 fish.pcoa <- pcoa(fish.traits.dist.60percent, correction = "lingoes")
@@ -201,38 +232,12 @@ fish.pcoa <- pcoa(fish.traits.dist.60percent, correction = "lingoes")
 numeric_columns_id <- attributes(fish.traits.dist.60percent)$Types == "C"
 fish.traits.60percent.numeric <- fish.traits.60percent[,numeric_columns_id]
 
-biplot.pcoa(fish.pcoa, scale(fish.traits.60percent))
-abline(h=0, lty=3)
-abline(v=0, lty=3)
+# biplot.pcoa(fish.pcoa, scale(fish.traits.60percent))
+# abline(h=0, lty=3)
+# abline(v=0, lty=3)
 
 hot.dist.pcoa <- pcoa(fish.traits.60percent.hot.dist, correction = "lingoes")
 
 biplot.pcoa(hot.dist.pcoa,scale(fish.traits.60percent.hot))
 abline(h=0, lty=3)
 abline(v=0, lty=3)
-
-##back to CMD other method of plotting
-
-fish.pcoa.frame <- as.data.frame(fish.cmd)
-
-fish.pcoa.frame$clusterID <- clust.fish$clusterID
-
-names(fish.pcoa.frame)[1:2] <- c('PC1', 'PC2')
-
-cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442",
-               "#0072B2", "#D55E00", "#CC79A7","#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-
-PcoA <- ggplot(fish.pcoa.frame, aes(x = PC1, y = PC2, color = clusterID,
-                                    fill = clusterID))+
-                                    #label = row.names(fish.pcoa.frame)) 
-                stat_ellipse(geom = "polygon", col = "black", alpha = 0.5)+
-                 geom_point (shape = 21, col = "black")
-
-PcoA + geom_point(size =5)+
-  scale_colour_manual(values = cbPalette) +
-  geom_text(col = 'black')
-
-##Other ploting methods
-
-ordu = ordinate(GP1, "PCoA", "unifrac", weighted=TRUE)
-plot_ordination(GP1, ordu, color="SampleType", shape="human")
