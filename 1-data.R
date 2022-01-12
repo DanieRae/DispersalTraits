@@ -16,6 +16,7 @@ library(cluster)
 library(mltools)
 library(data.table)
 library(vegan)
+library(gclus)
 
 
 #load full data and view it#
@@ -52,5 +53,5 @@ atlantic.fish.traits <- atlantic.fish.traits %>%
 
 fish.traits <- select(atlantic.fish.traits, -c ("Genus","Subfamily", "Family", "Order", "Class", "Phylum","Atlantic..Northwest","Common", "DemersPelagRef", "MigratRef", "DepthRangeRef", "DepthComRef", "VerticalMoveRef", "LatMin", "LatMax", "LatRef", "LongevityWildRef", "MaxLengthRef", "CommonLengthRef", "MainCatchingMethod", "II", "MSeines", "MGillnets", "MCastnets", "MTraps", "MTrawls", "MDredges", "MLiftnets", "MHooksLines", "MSpears", "MOther", "MobilityRef", "FecundityRef", "SpawnRef", "LarvalRef", "LLRef", "LVRef", "PLDRef", "ADRef", "RaftingRef", "SchoolingRef", "Notes", "Comments", "Website.Link"))
 
-#Veiw current data format#
+#View current data format#
 View(fish.traits)
