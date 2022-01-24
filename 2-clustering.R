@@ -136,8 +136,9 @@ plot(
   xlab = "33 groups",
   sub = "(Dispersal trait clusters)",
   ylab = "Height",
-  main = "Fish Species (reordered)",
-  labels = cutree(fish.traits.UPGMA.60percent, k =33)
+  main = "Fish Species (reordered)")
+,
+  #labels = cutree(fish.traits.UPGMA.60percent, k =33)
 )
 rect.hclust(fish.traits.UPGMA.60percent, k = 33)
 # Plot the final dendrogram with group colors (RGBCMY...)
@@ -155,10 +156,6 @@ clust.fish <- cbind(fish.traits.60percent, clusterID = cutree)
 clust.fish$clusterID <- as.factor(clust.fish$clusterID)
 
 
-# ga.fish.traits.dist <- gawdis(fish.traits)
-
-functional.diversity.FT <- dbFD(fish.traits.dist,
-                                corr = "lingoes")
 ##ONEHOT
 
 fish.traits.60percent.hot <- one_hot(as.data.table(fish.traits.60percent))
@@ -215,6 +212,11 @@ U <-  tidyr::drop_na(as.data.frame(
   get_U_matrix(scale(fish.traits.60percent.hot), fish.cdm.eig, fish.cmd.values)))/5 
 colnames(U) <- c("x", "y")
 U$var_name <- rownames(U)
+
+old_var_name <- U$var_name
+new_var_name <- c("eel-like", "elongated", "normal", "other","short","fresh", "brack","bathydemersal", "bathypelagic","benthopelagic", "demersal","neritic","oceanic", "shallow", "vertical", "non-vertical", "length")
+
+U$var_name <- new_var_name
 
 plot1 + geom_segment(data = U,
                      aes(x = 0, xend = x, 
