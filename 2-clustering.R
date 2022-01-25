@@ -209,9 +209,11 @@ get_U_matrix <- function(Y, Eig, vectors, plot.axes=c(1,2),
 }
 
 U <-  tidyr::drop_na(as.data.frame(
-  get_U_matrix(scale(fish.traits.60percent.hot), fish.cdm.eig, fish.cmd.values)))/5 
+  get_U_matrix(scale(fish.traits.60percent.hot), fish.cdm.eig, fish.cmd.values)))/3 
 colnames(U) <- c("x", "y")
 U$var_name <- rownames(U)
+
+#current row names do not add up to the row names from the 60percent.hot, why is this happening?#
 
 old_var_name <- U$var_name
 new_var_name <- c("eel-like", "elongated", "normal", "other","short","fresh", "brack","bathydemersal", "bathypelagic","benthopelagic", "demersal","neritic","oceanic", "shallow", "vertical", "non-vertical", "length")
