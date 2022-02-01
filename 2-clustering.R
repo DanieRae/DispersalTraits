@@ -245,3 +245,10 @@ hot.dist.pcoa <- pcoa(fish.traits.60percent.hot.dist, correction = "lingoes")
 biplot.pcoa(hot.dist.pcoa,scale(fish.traits.60percent.hot))
 abline(h=0, lty=3)
 abline(v=0, lty=3)
+
+test <- ggplot(data.frame(clust.fish),aes(x=clusterID)) 
+
+test + geom_histogram(fill="lightgreen")
+
+test + geom_histogram(fill="blue", aes(y=..count../sum(..count..)))
+test
