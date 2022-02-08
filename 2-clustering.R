@@ -115,7 +115,7 @@ points(k.best,
 
 
 
-k <- 33
+k <- 48
 
 # Plot reordered dendrogram with group labels
 # plot(
@@ -140,16 +140,16 @@ plot(
 ,
   #labels = cutree(fish.traits.UPGMA.60percent, k =33)
 )
-rect.hclust(fish.traits.UPGMA.60percent, k = 33)
+rect.hclust(fish.traits.UPGMA.60percent, k = 48)
 # Plot the final dendrogram with group colors (RGBCMY...)
 # Fast method using the additional hcoplot() function:
 # !!! Sourcing the function first
 source("functions/hcoplot.R")
-hcoplot(fish.traits.60percent.UPGMA.reordered, fish.traits.dist.60percent, k = 33)
+hcoplot(fish.traits.60percent.UPGMA.reordered, fish.traits.dist.60percent, k = 48)
 
 #adding cluster ID to data
 
-cutree <- cutree(fish.traits.UPGMA.60percent, k =33)
+cutree <- cutree(fish.traits.UPGMA.60percent, k =48)
 
 clust.fish <- cbind(fish.traits.60percent, clusterID = cutree)
 
@@ -209,14 +209,14 @@ get_U_matrix <- function(Y, Eig, vectors, plot.axes=c(1,2),
 }
 
 U <-  tidyr::drop_na(as.data.frame(
-  get_U_matrix(scale(fish.traits.60percent.hot), fish.cdm.eig, fish.cmd.values)))/3 
+  get_U_matrix(scale(fish.traits.60percent.hot), fish.cdm.eig, fish.cmd.values)))/5 
 colnames(U) <- c("x", "y")
 U$var_name <- rownames(U)
 
 #current row names do not add up to the row names from the 60percent.hot, why is this happening?#
 
 old_var_name <- U$var_name
-new_var_name <- c("eel-like", "elongated", "normal", "other","short","fresh", "brack","bathydemersal", "bathypelagic","benthopelagic", "demersal","neritic","oceanic", "shallow", "vertical", "non-vertical", "length")
+new_var_name <- c("Eel-like", "Elongated", "Normal", "Other","Short","Fresh", "Brack","Bathydemersal", "Bathypelagic","Benthopelagic", "Demersal","Neritic","Oceanic", "Shallow", "Vertical N", "Vertical Y", "Length", "Larval demersal", "Larval direct", "Larval pelagic")
 
 U$var_name <- new_var_name
 

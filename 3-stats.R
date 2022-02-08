@@ -16,3 +16,9 @@ functional.diversity.FT <- dbFD(fish.traits.dist,
 #Include abundance distributions (biomass) across FE's, before and during collapse 
 
 #How does the FE diversity compare to hill numbers locally (alpha and gamma) gradients of beta accross the space
+
+
+##Lets add the cluster IDs to the abundance data. Seems like it could be useful 
+
+fish.abun.clean$clusterID <- clust.fish$clusterID
+
