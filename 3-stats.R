@@ -20,5 +20,19 @@ functional.diversity.FT <- dbFD(fish.traits.dist,
 
 ##Lets add the cluster IDs to the abundance data. Seems like it could be useful 
 
-fish.abun.clean$clusterID <- clust.fish$clusterID
+clust.ID <- select (clust.fish, c ("clusterID"))
+clust.ID$taxa_name <- row.names(clust.ID)
+
+fish.abun.clust <- merge(x = fish.abun.clean, y= clust.ID, by = "taxa_name", all.x = TRUE)
+
+#keep only the columns of  interest 
+
+fish.abun.clustCL <- select(fish.abun.clust, -c ("year_obs", "season", "vessel", "distance_km", "area_swept_km2"))
+
+# group by year and stratum #
+
+
+fish.abun.gr <- fish.abun.clustCL %>% group_by(year_surv, stratum)
+  
+fish.abun.sum <- fish.abun.gr %>% summarise(sum_group = sum(year_surv))
 
