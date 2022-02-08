@@ -21,13 +21,13 @@ library(gclus)
 #PART ONE#
 #load full data and view it#
 
-atlantic.fish.traits <- read.csv("AtlanticFishTraits.csv", fileEncoding ="UTF-8-BOM", stringsAsFactors = TRUE)
+raw.fish.traits <- read.csv("AtlanticFishTraits.csv", fileEncoding ="UTF-8-BOM", stringsAsFactors = TRUE)
 
 #this was recommended to keep data in an easier format for analysis#
 #atlantic.fish.traits <- as_tibble(atlantic.fish.traits)# this is messing with something so im removing it for now
 
 #need to cut out all the dead space after the last species, not sure why that was there but bye bye#
-atlantic.fish.traits <- atlantic.fish.traits %>% slice(1:117)
+atlantic.fish.traits <- raw.fish.traits %>% slice(1:117)
 
 #Making species name the row names and shortening them - might want to remove this as it is causing problems with the visuals on the plots#
 
@@ -56,6 +56,7 @@ fish.traits <- select(atlantic.fish.traits, -c ("Genus","Subfamily", "Family", "
 #View current data format#
 View(fish.traits)
 
+fish.traits <- fish.traits[!is.na(fish.traits$LarvalStrategy),]
 
 #PART TWO#
 #Load abundance data#
@@ -75,6 +76,7 @@ species_name <- str_to_sentence(species_name)
 species_name[species_name == "Myoxocephalus scorpioides"] <- c("Myoxocephalus scorpioides 1")
 species_name[species_name == "Myoxocephalus scorpius"] <- c("Myoxocephalus scorpius 2")
 
+
 new_species_name <- unlist(lapply(lapply(str_split(species_name, " "), 
                                      FUN = str_sub, 1, 3), paste0, collapse = "_"))
 
@@ -83,6 +85,6 @@ fish.abun <- select(fish.abun, -c ("taxa_name"))
 fish.abun <- cbind(fish.abun, taxa_name = new_species_name)
 
 #Need to cut out all the species not included in the main data
+# %in% use for comparing two vectors of unequal length#
 
-
-df1 <- fish.abun %>% filter(taxa_name == new_rownames)
+fish.abun.clean <- fish.abun %>% filter(taxa_name %in% new_rownames)
