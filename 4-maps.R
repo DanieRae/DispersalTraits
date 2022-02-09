@@ -1,5 +1,6 @@
 library(sf)
 library(ggplot2)
+library(ggforce)
 # library(tmap)
 
 # Import the data ---------------------------------------------------------
@@ -7,7 +8,10 @@ library(ggplot2)
 # read all files of the shapefile
 stratum <- st_read("strata/all_strata.shp")
 
-stratum.new <- select(stratum, -c ("DIV", "strtm_t"))
+stratum.new <- select(stratum, -c ("DIV", "strtm_t")) %>% 
+  st_make_valid() %>%  
+  group_by(stratum) %>% 
+  dplyr::summarize(geometry = st_union(geometry))
 
 # simple plotting
 plot(stratum$geometry)
@@ -25,7 +29,6 @@ fish.abun.clustCL <- select(fish.abun.clust, -c ("year_obs", "season", "vessel",
 
 # group by year and stratum #
 
-
 fish.abun.gr <- fish.abun.clustCL %>% 
   group_by(stratum, year_surv) %>% 
   dplyr::summarise(Unique_FE = n_distinct(clusterID))
@@ -33,30 +36,19 @@ fish.abun.gr <- fish.abun.clustCL %>%
 #join stratum table and unique FE table 
 #first I need to filter teh data because I don't have the infor for all stratum
 
-strata.filter.fish <- stratum.new$stratum
+stratum.FE <- merge(x = fish.abun.gr, y= stratum.new, by = "stratum", all.y = TRUE) %>% 
+  sf::st_as_sf()
 
-fish.abun.filter <- fish.abun.gr %>% filter(stratum %in% strata.filter.fish)
+# MAP
+map1 <- stratum.FE %>% 
+  # filter(year_surv %in% c(2000:2003)) %>% 
+  ggplot() +
+  geom_sf(aes(fill = Unique_FE)) +
+  ggtitle(label = "map shit") +
+  scale_fill_viridis_c () +
+  theme_light() +
+  # facet_wrap(~year_surv)
+  ggforce::facet_wrap_paginate(~year_surv,
+                               nrow = 2, ncol = 2, page = 2)
 
-fish.abun.filter.strat <- fish.abun.filter$stratum 
-
-stratum.filter <- stratum.new %>% filter(stratum %in% fish.abun.filter.strat)
-   
-  
-stratum.FE <- merge(x = fish.abun.filter, y= stratum.filter, by = "stratum", all.x = FALSE)
-
-#some duplication was happening so i ran this to remove duplicated rows#
-
-stratum.FE.nodup <- stratum.FE %>% distinct(stratum, year_surv, .keep_all = TRUE)
-
-#MAP
-
-map1 <- ggplot(data = stratum.FE.nodup) +
-  geom_sf( data = stratum.FE.nodup$geometry)
-
-map2 <- ggplot(data = stratum.FE.nodup) +
-  geom_sf( data = stratum.FE.nodup$geometry, 
-           aes(fill = stratum.FE.nodup$Unique_FE))+
-  ggtitle(label = "map shit")+
-  scale_fill_viridis_c ()
-
-
+ggsave("plot.png", map1, width =  10, height = 10)
