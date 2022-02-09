@@ -9,8 +9,11 @@ library(ggforce)
 stratum <- st_read("strata/all_strata.shp")
 
 stratum.new <- select(stratum, -c ("DIV", "strtm_t")) %>% 
+  # Validating geometries to make operations on them 
   st_make_valid() %>%  
+  # grouping by the stratum id
   group_by(stratum) %>% 
+  # Combining all polygons that have the same stratum ID
   dplyr::summarize(geometry = st_union(geometry))
 
 # simple plotting
