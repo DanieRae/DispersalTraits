@@ -32,7 +32,11 @@ fish.abun.clustCL <- select(fish.abun.clust, -c ("year_obs", "season", "vessel",
 # group by year and stratum #
 
 
-fish.abun.gr <- fish.abun.clustCL %>% group_by(year_surv, stratum)
+fish.abun.gr <- fish.abun.clustCL %>% 
+                  group_by(stratum, year_surv) %>% 
+                  dplyr::summarise(Unique_FE = n_distinct(clusterID))
+                                                     f      
   
-fish.abun.sum <- fish.abun.gr %>% summarise(sum_group = sum(year_surv))
+fish.abun.sum <- fish.abun.gr %>% dplyr::summarise(total =n(),
+                                                   cluster = clusterID)
 

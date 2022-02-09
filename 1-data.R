@@ -58,6 +58,8 @@ View(fish.traits)
 
 fish.traits <- fish.traits[!is.na(fish.traits$LarvalStrategy),]
 
+rownames.noNA <- rownames(fish.traits)
+
 #PART TWO#
 #Load abundance data#
 
@@ -87,4 +89,4 @@ fish.abun <- cbind(fish.abun, taxa_name = new_species_name)
 #Need to cut out all the species not included in the main data
 # %in% use for comparing two vectors of unequal length#
 
-fish.abun.clean <- fish.abun %>% filter(taxa_name %in% new_rownames)
+fish.abun.clean <- fish.abun %>% filter(taxa_name %in% rownames.noNA)
