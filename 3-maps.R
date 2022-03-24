@@ -1,14 +1,15 @@
 library(sf)
 library(ggplot2)
 library(ggforce)
+
 # library(tmap)
 
 # Import the data ---------------------------------------------------------
 
 # read all files of the shapefile
-stratum <- st_read("strata/all_strata.shp")
+stratum.shpfile <- st_read("strata/all_strata.shp")
 
-stratum.new <- select(stratum, -c ("DIV", "strtm_t")) %>% 
+stratum.new <- select(stratum.shpfile, -c ("DIV", "strtm_t")) %>% 
   # Validating geometries to make operations on them 
   st_make_valid() %>%  
   # grouping by the stratum id
@@ -44,14 +45,14 @@ stratum.FE <- merge(x = fish.abun.gr, y= stratum.new, by = "stratum", all.y = TR
 
 # MAP
 map1 <- stratum.FE %>% 
-  # filter(year_surv %in% c(2000:2003)) %>% 
+  filter(year_surv %in% c(1995)) %>% 
   ggplot() +
   geom_sf(aes(fill = Unique_FE)) +
-  ggtitle(label = "map shit") +
+  ggtitle(label = "Dispersal Richness") +
   scale_fill_viridis_c () +
   theme_light() +
-  # facet_wrap(~year_surv)
-  ggforce::facet_wrap_paginate(~year_surv,
-                               nrow = 2, ncol = 2, page = 2)
+  facet_wrap(~year_surv)
+  #ggforce::facet_wrap_paginate(~year_surv,
+                              # nrow = 2, ncol = 2, page = 2)
 
-ggsave("plot.png", map1, width =  10, height = 10)
+ggsave("plot1995.png", map1, width =  10, height = 10)

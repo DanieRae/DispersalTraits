@@ -6,58 +6,52 @@ head(fish.traits)
 # a vector containing how many NAs are in a given column
 fish.traits.NAs <- apply(fish.traits, FUN=function(x){sum(is.na(x))}, MARGIN = 2)
 
-# Identify which columns have 0 NAs
-fish.traits.noNas.columns <- names(fish.traits.NAs[fish.traits.NAs == 0])
+# Identify which columns have less than 40 NAs
+fish.traits.40Nas.columns <- names(fish.traits.NAs[fish.traits.NAs <= 40])
 
-fish.traits.noNA <- fish.traits[, fish.traits.noNas.columns]
+fish.traits.40NA <- fish.traits[, fish.traits.40Nas.columns]
 
 
 #FD package is suppose to be able to use many different data types
 # Calculate the distance matrix using Gower coefficient (S15 in numerical ecology book
 # page 297)
+#
 fish.traits.dist <- gowdis(fish.traits, asym.bin = NULL)
 fish.traits.dist
 
-fish.traits.dist.noNa <- gowdis(fish.traits.noNA, asym.bin = NULL)
-fish.traits.dist.noNa
+fish.traits.40NA.dist <- gowdis(fish.traits.40NA, asym.bin = NULL)
+fish.traits.40NA.dist
 
-image(as.matrix(fish.traits.dist) - as.matrix(fish.traits.dist.noNa), asp=1)
+image(as.matrix(fish.traits.dist) - as.matrix(fish.traits.40NA.dist), asp=1)
 
-
-fish.traits.noDispersal <- dplyr::select(fish.traits, -AverageDispersal)
-fish.traits.dist.noDispersal <- gowdis(fish.traits.noDispersal, asym.bin = NULL)
-fish.traits.dist.noDispersal
-
-image(as.matrix(fish.traits.dist) - as.matrix(fish.traits.dist.noDispersal), asp=1)
 
 #keeping traits with up to 60% missing data#
-fish.traits.60percent <- dplyr::select(fish.traits, -c ("AverageDispersal", "CommonLength", "LTypeComM", "CommonLengthF","LTypeMaxM", "MaxWeightRef", "FecundityMin","FecundityMax", "FecundityMean", "FecundityType","SpawningSeason", "LarvalLength","MinPLD","MaxPLD","AvePLD","MinDispersal", "MaxDispersal", "Rafting","Schooling", "WeightFemale", "LTypeComF"))
+fish.traits.60NA.column<- names(fish.traits.NAs[fish.traits.NAs <= 58])
 
-fish.traits.dist.60percent <- gowdis(fish.traits.60percent, asym.bin = NULL)
-fish.traits.dist.60percent
+fish.traits.60NA <- fish.traits[, fish.traits.60NA.column]
 
-image(as.matrix(fish.traits.dist) - as.matrix(fish.traits.dist.60percent), asp=1)
+fish.traits.60NA.dist <- gowdis(fish.traits.60NA, asym.bin = NULL)
+fish.traits.60NA.dist
+
+image(as.matrix(fish.traits.40NA.dist) - as.matrix(fish.traits.60NA.dist), asp=1)
 
 
 # Attempting to cluster the distance metrics using UPGMA
 fish.traits.UPGMA <- hclust(fish.traits.dist, method = "average")
-plot(fish.traits.UPGMA)
+plot(fish.traits.UPGMA,hang= -1)
 
-fish.traits.UPGMA.noDispersal <- hclust(fish.traits.dist.noDispersal, method = "average")
-plot(fish.traits.UPGMA.noDispersal)
+fish.traits.40NA.UPGMA <- hclust(fish.traits.40NA.dist, method = "average")
+plot(fish.traits.40NA.UPGMA, hang= -1)
 
-fish.traits.UPGMA.60percent <- hclust(fish.traits.dist.60percent, method = "average")
-plot(fish.traits.UPGMA.60percent, hang= -1)
+fish.traits.60NA.UPGMA <- hclust(fish.traits.60NA.dist, method = "average")
+plot(fish.traits.60NA.UPGMA, hang= -1)
 
-#Lets compare the clustering method to centroid, what will work better
-fish.traits.UPGMC.60percent <- hclust(fish.traits.dist.60percent, method = "centroid")
-plot(fish.traits.UPGMC.60percent)
 
 #comparing heat map#
 
-dend <- as.dendrogram(fish.traits.UPGMA.60percent)
+dend <- as.dendrogram(fish.traits.60NA.UPGMA)
 heatmap(
-  as.matrix(fish.traits.dist.60percent),
+  as.matrix(fish.traits.60NA.dist),
   Rowv = dend,
   symm = T,
   margin=c(3,3))
@@ -66,33 +60,38 @@ heatmap(
 
 # Shameless code steal from numerical ecology in R
 
-# Reorder clusters doesn't seem important -------------------------------
+# Reorder clusters -------------------------------
+fish.traits.UPGMA.reordered <- reorder(fish.traits.UPGMA, fish.traits.dist)
+plot(fish.traits.UPGMA.reordered, hang =-1)
 
-fish.traits.noDispersal.UPGMA.reordered <- reorder(fish.traits.UPGMA.noDispersal, 
-                                                   fish.traits.dist.noDispersal)
+
+fish.traits.40NA.UPGMA.reordered <- reorder(fish.traits.40NA.UPGMA, 
+                                            fish.traits.40NA.dist)
+plot(fish.traits.40NA.UPGMA.reordered, hang =-1)
 
 
-fish.traits.60percent.UPGMA.reordered <- reorder(fish.traits.UPGMA.60percent, 
-                                                 fish.traits.dist.60percent)
-
-plot(fish.traits.60percent.UPGMA.reordered, hang =-1)
+fish.traits.60NA.UPGMA.reordered <- reorder(fish.traits.60NA.UPGMA, 
+                                            fish.traits.60NA.dist)
+plot(fish.traits.60NA.UPGMA.reordered, hang =-1)
 
 
 # Plots -------------------------------------------------------------------
 
-#How to determine how many clusters? Silhouette widths#
+#How to determine how many clusters? Silhouette widths, I don't want to cluster based on width anymore, id prefer to cluster based on height.
 
-fish_60clust <- fish.traits.UPGMA.60percent
+fish_clust <- fish.traits.UPGMA.reordered 
+fish_40clust <- fish.traits.40NA.UPGMA.reordered
+fish_60clust <- fish.traits.60NA.UPGMA.reordered
 
-Si <- numeric(nrow(fish.traits.60percent))
-for (k in 2:(nrow(fish.traits.60percent)-1)) {
-  sil <- silhouette(cutree(fish_60clust, k=k), fish.traits.dist.60percent)
+Si <- numeric(nrow(fish.traits.40NA))
+for (k in 2:(nrow(fish.traits.40NA)-1)) {
+  sil <- silhouette(cutree(fish_40clust, k=k), fish.traits.40NA.dist)
   Si[k] <- summary(sil)$avg.width
 }
 
 k.best <- which.max(Si)
 plot(
-  1:nrow(fish.traits.60percent),
+  1:nrow(fish.traits.40NA),
   Si,
   type="h",
   main="Silhouette-optimal number of clusters",
@@ -115,7 +114,6 @@ points(k.best,
 
 
 
-k <- 48
 
 # Plot reordered dendrogram with group labels
 # plot(
@@ -131,16 +129,15 @@ k <- 48
 # hcoplot(fish.traits.60percent.UPGMC.reordered,fish.traits.dist.60percent, k = k)
 
 plot(
-  fish.traits.UPGMA.60percent,
+  fish.traits.60NA.UPGMA.reordered,
   hang = -1,
-  xlab = "33 groups",
-  sub = "(Dispersal trait clusters)",
+  xlab = "Groups",
+  sub = "(Functional Entities)",
   ylab = "Height",
-  main = "Fish Species (reordered)")
-,
+  main = "Fish Species Clustered by Dispersal Traits")
   #labels = cutree(fish.traits.UPGMA.60percent, k =33)
-)
-rect.hclust(fish.traits.UPGMA.60percent, k = 48)
+
+rect.hclust(fish.traits.UPGMA.60percent, k = 20)
 # Plot the final dendrogram with group colors (RGBCMY...)
 # Fast method using the additional hcoplot() function:
 # !!! Sourcing the function first
@@ -155,6 +152,7 @@ clust.fish <- cbind(fish.traits.60percent, clusterID = cutree)
 
 clust.fish$clusterID <- as.factor(clust.fish$clusterID)
 
+write.csv(clust.fish,"C:\\Users\\Danielle\\Documents\\Grad school\\FishTraitsClustered.csv", row.names = TRUE)
 
 ##ONEHOT
 
