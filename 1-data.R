@@ -2,6 +2,7 @@
 
 # install.packages("devtools")
 # install_github("vqv/ggbiplot")
+#install.packages("reshape")
 
 
 library(dplyr)
@@ -17,6 +18,7 @@ library(mltools)
 library(data.table)
 library(vegan)
 library(gclus)
+#library(reshape)
 
 #PART ONE#
 #load full data and view it#
@@ -39,7 +41,7 @@ old_rownames <- rownames(atlantic.fish.traits)
 new_rownames <- unlist(lapply(lapply(str_split(old_rownames, " "), 
                                       FUN = str_sub, 1, 3), paste0, collapse = "_"))
 new_rownames[new_rownames == "Myo_sco"] <- c("Myo_sco_1", "Myo_sco_2")
-rownames(atlantic.fish.traits) <- new_rownames
+rownames(atlantic.fish.traits) <- sort(new_rownames, decreasing = FALSE)
  
 norm <- decostand(atlantic.fish.traits, "normalize") #DOES THIS MATTER?#
 
