@@ -53,14 +53,14 @@ atlantic.fish.traits <- atlantic.fish.traits %>%
 
 #Data cleaning of unnecessary columns, such as references#
 
-fish.traits <- select(atlantic.fish.traits, -c ("Genus","Subfamily", "Family", "Order", "Class", "Phylum","Atlantic..Northwest","Common", "DemersPelagRef", "MigratRef", "DepthRangeRef", "DepthComRef", "VerticalMoveRef", "LatMin", "LatMax", "LatRef", "LongevityWildRef", "MaxLengthRef", "CommonLengthRef", "MainCatchingMethod", "II", "MSeines", "MGillnets", "MCastnets", "MTraps", "MTrawls", "MDredges", "MLiftnets", "MHooksLines", "MSpears", "MOther", "MobilityRef", "FecundityRef", "SpawnRef", "LarvalRef", "LLRef", "LVRef", "PLDRef", "ADRef", "RaftingRef", "SchoolingRef", "Notes", "Comments", "Website.Link"))
+fish.traits <- select(atlantic.fish.traits, -c ("Genus","Subfamily", "Family", "Order", "Class", "Phylum","Atlantic..Northwest","Common", "DemersPelagRef", "MigratRef", "DepthRangeRef", "DepthComRef","LTypeMaxM","LTypeComM","LTypeComF", "VerticalMoveRef", "LatMin", "LatMax", "LatRef", "LongevityWildRef", "MaxLengthRef","MaxWeightRef", "CommonLengthRef", "MainCatchingMethod", "II", "MSeines", "MGillnets", "MCastnets", "MTraps", "MTrawls", "MDredges", "MLiftnets", "MHooksLines", "MSpears", "MOther", "MobilityRef", "FecundityRef", "SpawnRef", "LarvalRef", "LLRef", "LVRef", "PLDRef", "ADRef", "RaftingRef", "SchoolingRef", "Notes", "Comments", "Website.Link"))
 
 #View current data format#
 View(fish.traits)
 
 fish.traits <- fish.traits[!is.na(fish.traits$LarvalStrategy),]
 
-rownames.noNA <- rownames(fish.traits)
+rownames.fish.traits <- rownames(fish.traits)
 
 #PART TWO#
 #Load abundance data#
@@ -91,4 +91,4 @@ fish.abun <- cbind(fish.abun, taxa_name = new_species_name)
 #Need to cut out all the species not included in the main data
 # %in% use for comparing two vectors of unequal length#
 
-fish.abun.clean <- fish.abun %>% filter(taxa_name %in% rownames.noNA)
+fish.abun.clean <- fish.abun %>% filter(taxa_name %in% rownames.fish.traits)

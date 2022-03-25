@@ -79,9 +79,9 @@ plot(fish.traits.60NA.UPGMA.reordered, hang =-1)
 
 #How to determine how many clusters? Silhouette widths, I don't want to cluster based on width anymore, id prefer to cluster based on height.
 
-fish_clust <- fish.traits.UPGMA.reordered 
+#fish_clust <- fish.traits.UPGMA.reordered 
 fish_40clust <- fish.traits.40NA.UPGMA.reordered
-fish_60clust <- fish.traits.60NA.UPGMA.reordered
+#fish_60clust <- fish.traits.60NA.UPGMA.reordered
 
 Si <- numeric(nrow(fish.traits.40NA))
 for (k in 2:(nrow(fish.traits.40NA)-1)) {
@@ -129,7 +129,7 @@ points(k.best,
 # hcoplot(fish.traits.60percent.UPGMC.reordered,fish.traits.dist.60percent, k = k)
 
 plot(
-  fish.traits.60NA.UPGMA.reordered,
+  fish.traits.40NA.UPGMA.reordered,
   hang = -1,
   xlab = "Groups",
   sub = "(Functional Entities)",
@@ -137,18 +137,18 @@ plot(
   main = "Fish Species Clustered by Dispersal Traits")
   #labels = cutree(fish.traits.UPGMA.60percent, k =33)
 
-rect.hclust(fish.traits.UPGMA.60percent, k = 20)
+rect.hclust(fish.traits.40NA.UPGMA.reordered, k = 30)
 # Plot the final dendrogram with group colors (RGBCMY...)
 # Fast method using the additional hcoplot() function:
 # !!! Sourcing the function first
 source("functions/hcoplot.R")
-hcoplot(fish.traits.60percent.UPGMA.reordered, fish.traits.dist.60percent, k = 48)
+hcoplot(fish.traits.40NA.UPGMA.reordered, fish.traits.40NA.dist, k = 30)
 
 #adding cluster ID to data
 
-cutree <- cutree(fish.traits.UPGMA.60percent, k =48)
+cutree <- cutree(fish.traits.40NA.UPGMA.reordered, k =30)
 
-clust.fish <- cbind(fish.traits.60percent, clusterID = cutree)
+clust.fish <- cbind(fish.traits.40NA, clusterID = cutree)
 
 clust.fish$clusterID <- as.factor(clust.fish$clusterID)
 
@@ -156,9 +156,9 @@ write.csv(clust.fish,"C:\\Users\\Danielle\\Documents\\Grad school\\FishTraitsClu
 
 ##ONEHOT
 
-fish.traits.60percent.hot <- one_hot(as.data.table(fish.traits.60percent))
+fish.traits.40NA.hot <- one_hot(as.data.table(fish.traits.40NA))
 
-fish.traits.60percent.hot.dist <-gowdis(fish.traits.60percent.hot, asym.bin = NULL)
+fish.traits.40NA.hot.dist <-gowdis(fish.traits.40NA.hot, asym.bin = NULL)
 
 # PCOA two function produce similar plots, cmdscale has open circles and pcoa uses the species names 
 
@@ -166,7 +166,7 @@ fish.traits.60percent.hot.dist <-gowdis(fish.traits.60percent.hot, asym.bin = NU
 
 ## CMDSCALE pcoa method with ggplot 
 
-fish.cmd <- cmdscale(fish.traits.dist.60percent, eig = TRUE, x.ret = TRUE, k =2)
+fish.cmd <- cmdscale(fish.traits.40NA.dist, eig = TRUE, x.ret = TRUE, k =2)
 
 fish.cdm.eig <- round (fish.cmd$eig/sum(fish.cmd$eig)*100,1)
 
@@ -207,7 +207,7 @@ get_U_matrix <- function(Y, Eig, vectors, plot.axes=c(1,2),
 }
 
 U <-  tidyr::drop_na(as.data.frame(
-  get_U_matrix(scale(fish.traits.60percent.hot), fish.cdm.eig, fish.cmd.values)))/5 
+  get_U_matrix(scale(fish.traits.40NA.hot), fish.cdm.eig, fish.cmd.values)))/5 
 colnames(U) <- c("x", "y")
 U$var_name <- rownames(U)
 
