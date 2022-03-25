@@ -34,9 +34,11 @@ Abun.fish.wide.1995.subset <- Abun.fish.wide.1995[, ..names.1995.withdata]
 
 Abun.fish.wide.1995.subset <- as.matrix(Abun.fish.wide.1995.subset)
 
-Identity <- functcomp(fish.traits.40NA.subset1995, Abun.fish.wide.1995.subset) 
+Identity <- functcomp(droplevels(fish.traits.40NA.subset1995), 
+                      Abun.fish.wide.1995.subset) 
 
-functional.diversity.FT <- dbFD(fish.traits.40NA.subset1995, as.matrix(Abun.fish.wide.1995.subset), corr = "lingoes")
+functional.diversity.FT <- dbFD(droplevels(fish.traits.40NA.subset1995), 
+                                as.matrix(Abun.fish.wide.1995.subset), corr = "lingoes")
 
 #With the clustering of the species here a a few responses that should be looked at#
 
