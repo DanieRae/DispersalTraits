@@ -21,13 +21,22 @@ Abun.fish.wide.1995 <- subset(Abun.fish.wide,year_surv=="1995")
 
 Abun.fish.wide.1995 <- select(Abun.fish.wide.1995, -c("year_surv","stratum"))
 
-Abun.fish.wide.1995 <- sort(names(Abun.fish.wide.1995, decreasing = TRUE))
+Abun.fish.wide.1995.names <- sort(names(Abun.fish.wide.1995),decreasing = FALSE)
 
+Abun.fish.wide.1995 <- Abun.fish.wide.1995[, ..Abun.fish.wide.1995.names]
 
-Identity <- functcomp(fish.traits.60percent, Abun.fish.wide.1995 )
+names.1995.nodata <- names(which(colSums(Abun.fish.wide.1995) == 0))
+names.1995.withdata <- names(which(colSums(Abun.fish.wide.1995) != 0))
 
-functional.diversity.FT <- dbFD(fish.traits.60percent, Abun.fish.wide.1995,
-                                corr = "lingoes")
+fish.traits.40NA.subset1995 <- fish.traits.40NA[!(row.names(fish.traits.40NA) %in% names.1995.nodata) ,]
+
+Abun.fish.wide.1995.subset <- Abun.fish.wide.1995[, ..names.1995.withdata]
+
+Abun.fish.wide.1995.subset <- as.matrix(Abun.fish.wide.1995.subset)
+
+Identity <- functcomp(fish.traits.40NA.subset1995, Abun.fish.wide.1995.subset) 
+
+functional.diversity.FT <- dbFD(fish.traits.40NA.subset1995, as.matrix(Abun.fish.wide.1995.subset), corr = "lingoes")
 
 #With the clustering of the species here a a few responses that should be looked at#
 
