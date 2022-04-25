@@ -2,11 +2,7 @@
 
 #need to call in the abundance data
 
-
-
-# ga.fish.traits.dist <- gawdis(fish.traits)
-
-#Abundance per community
+#Abundance per community by year
 Abun.fish <-fish.abun.clean %>%
   #first find, for each trawl and each functional group, the total biomass of that group in that trawl
   group_by(stratum, year_surv, vessel, trip, set, taxa_name)%>%
@@ -17,28 +13,51 @@ Abun.fish <-fish.abun.clean %>%
 
 Abun.fish.wide <- as.data.table (spread(Abun.fish, taxa_name, group_biomass, fill = 0))
 
-Abun.fish.wide.1995 <- subset(Abun.fish.wide,year_surv=="1995")
+Abun.fish.biomass <- select(Abun.fish.wide, -c ("stratum", "year_surv"))
 
-Abun.fish.wide.1995 <- select(Abun.fish.wide.1995, -c("year_surv","stratum"))
+Abun.fish.names <- sort(names(Abun.fish.biomass),decreasing = FALSE)
 
-Abun.fish.wide.1995.names <- sort(names(Abun.fish.wide.1995),decreasing = FALSE)
+Abun.fish.biomass <- Abun.fish.biomass[, ..Abun.fish.names]
 
-Abun.fish.wide.1995 <- Abun.fish.wide.1995[, ..Abun.fish.wide.1995.names]
 
-names.1995.nodata <- names(which(colSums(Abun.fish.wide.1995) == 0))
-names.1995.withdata <- names(which(colSums(Abun.fish.wide.1995) != 0))
+Abun.fish.biomass <- as.matrix(Abun.fish.biomass)
 
-fish.traits.40NA.subset1995 <- fish.traits.40NA[!(row.names(fish.traits.40NA) %in% names.1995.nodata) ,]
+#------ Function diversity measures --------
 
-Abun.fish.wide.1995.subset <- Abun.fish.wide.1995[, ..names.1995.withdata]
+Identity <- functcomp(fish.traits.40NA, 
+                      Abun.fish.biomass) 
 
-Abun.fish.wide.1995.subset <- as.matrix(Abun.fish.wide.1995.subset)
+functional.diversity.FT <- dbFD(fish.traits.40NA, 
+                                Abun.fish.biomass, corr = "lingoes")
 
-Identity <- functcomp(droplevels(fish.traits.40NA.subset1995), 
-                      Abun.fish.wide.1995.subset) 
+year.strat <- select(Abun.fish.wide, c("stratum", "year_surv"))
 
-functional.diversity.FT <- dbFD(droplevels(fish.traits.40NA.subset1995), 
-                                as.matrix(Abun.fish.wide.1995.subset), corr = "lingoes")
+FEve.comm <- cbind(functional.diversity.FT$FEve, stratum = year.strat$stratum, year = year.strat$year_surv)
+
+FEve.comm <- as.data.frame(FEve.comm)
+
+CWM.comm <- cbind(functional.diversity.FT$CWM, stratum = year.strat$stratum, year = year.strat$year_surv)
+
+#Some plots to visualize the functional evenness by community over time. 
+
+FEve.comm %>%
+  filter(stratum %in% c(201,202,203,204,205,206,207,208,209,210)) %>%
+    ggplot (aes(x = year, y= V1))+  
+    geom_point(size =3)+
+    #geom_text()+
+    theme_bw()+
+    #xlab(paste("PCoA 1 -",fish.cdm.eig[1], "%", sep ="" ))+
+    #ylab(paste("PCoA 2 -",fish.cdm.eig[2], "%", sep ="" ))+
+    ggtitle("FEve community 201") +
+    geom_path() + 
+    theme(legend.position="none", asp=1) +
+    scale_color_grey()+
+    facet_wrap(~stratum)
+
+# should I do this all again in the clusters?
+
+
+
 
 #With the clustering of the species here a a few responses that should be looked at#
 
@@ -48,62 +67,3 @@ functional.diversity.FT <- dbFD(droplevels(fish.traits.40NA.subset1995),
 
 #How does the FE diversity compare to hill numbers locally (alpha and gamma) gradients of beta accross the space
 
-#Effective functional diversity
-effective.FD.simp <-fish.abun.clust %>%
-  #first find, for each trawl and each functional group, the total biomass of that group in that trawl
-    group_by(stratum, year_surv, vessel, trip, set, clusterID)%>%
-    dplyr::summarize(group_biomass = sum(density_kgperkm2))%>%
-              #calculate average biomass per stratum for each functional group
-    group_by(stratum, year_surv, clusterID)%>%
-    dplyr::summarize(group_biomass = mean(group_biomass))%>%
-              #calculate the Hill number for each stratum in each year
-    group_by(stratum, year_surv)%>%
-    dplyr::summarize(effective_species = exp(diversity(group_biomass, "simpson")))
-
-
-#Effective species Diversity                        
-effective.species.simp <-fish.abun.clean %>%
-  #first find, for each trawl and each functional group, the total biomass of that group in that trawl
-  group_by(stratum, year_surv, vessel, trip, set, taxa_name)%>%
-  dplyr::summarize(group_biomass = sum(density_kgperkm2))%>%
-  #calculate average biomass per stratum for each functional group
-  group_by(stratum, year_surv, taxa_name)%>%
-  dplyr::summarize(group_biomass = mean(group_biomass))%>%
-  #calculate the Hill number for each stratum in each year
-  group_by(stratum, year_surv)%>%
-  dplyr::summarize(effective_species = exp(diversity(group_biomass, "simpson")))
-
-
-effective.FD.strata.simp <- merge(x = effective.FD.simp , y= stratum.new, by = "stratum", all.y = TRUE) %>% 
-  sf::st_as_sf()
-
-effective.species.strata.simp <- merge(x = effective.species.simp, y= stratum.new, by = "stratum", all.y = TRUE) %>% 
-  sf::st_as_sf()
-
-# MAP
-map3 <- effective.species.strata.simp %>% 
-  filter(year_surv %in% c(1995,2000,2005,2010)) %>% 
-  ggplot() +
-  geom_sf(aes(fill = effective_species)) +
-  ggtitle(label = "Effective Species Diversity") +
-  scale_fill_viridis_c () +
-  theme_light() +
-  facet_wrap(~year_surv)
-#ggforce::facet_wrap_paginate(~year_surv,
-# nrow = 2, ncol = 2, page = 2)
-
-ggsave("EffectSpecies1995-2010.png", map1, width =  10, height = 10)
-
-# MAP
-map4 <- effective.FD.strata.simp %>% 
-  filter(year_surv %in% c(1995,2000,2005,2010)) %>% 
-  ggplot() +
-  geom_sf(aes(fill = effective_species)) +
-  ggtitle(label = "Effective Functional Diversity") +
-  scale_fill_viridis_c () +
-  theme_light() +
-  facet_wrap(~year_surv)
-#ggforce::facet_wrap_paginate(~year_surv,
-# nrow = 2, ncol = 2, page = 2)
-
-ggsave("EffectiveFD1995-2005-2015.png", map2, width =  10, height = 10)
