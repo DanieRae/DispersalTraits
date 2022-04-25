@@ -29,7 +29,7 @@ raw.fish.traits <- read.csv("AtlanticFishTraits.csv", fileEncoding ="UTF-8-BOM",
 #atlantic.fish.traits <- as_tibble(atlantic.fish.traits)# this is messing with something so im removing it for now
 
 #need to cut out all the dead space after the last species, not sure why that was there but bye bye#
-atlantic.fish.traits <- raw.fish.traits %>% slice(1:117)
+atlantic.fish.traits <- raw.fish.traits %>% droplevels()
 
 #Making species name the row names and shortening them - might want to remove this as it is causing problems with the visuals on the plots#
 
@@ -43,7 +43,6 @@ new_rownames <- unlist(lapply(lapply(str_split(old_rownames, " "),
 new_rownames[new_rownames == "Myo_sco"] <- c("Myo_sco_1", "Myo_sco_2")
 rownames(atlantic.fish.traits) <- sort(new_rownames, decreasing = FALSE)
  
-norm <- decostand(atlantic.fish.traits, "normalize") #DOES THIS MATTER?#
 
 #quick mutate to remove negative values in these columns#
 atlantic.fish.traits <- atlantic.fish.traits %>%
@@ -60,15 +59,16 @@ View(fish.traits)
 
 fish.traits <- fish.traits[!is.na(fish.traits$LarvalStrategy),]
 
-rownames.fish.traits <- rownames(fish.traits)
 
 #PART TWO#
 #Load abundance data#
 
 fish.abun <- read.csv("NL_Biomass.csv", fileEncoding ="UTF-8-BOM")
-View(fish.abun)
+
 
 #I need to make the taxa names match with the other data set
+
+rownames.fish.traits <- rownames(fish.traits)
 
 #This takes the species list and puts it into a character#
 species_name <- fish.abun$taxa_name
