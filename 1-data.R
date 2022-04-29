@@ -8,16 +8,13 @@
 library(dplyr)
 library(tidyr)
 library(stringr)
-library(FD)
-library(gawdis)
-library(ggplot2)
 library(devtools)
 library(ggbiplot)
-library(cluster)
 library(mltools)
 library(data.table)
 library(vegan)
-library(gclus)
+library(ade4)
+library(adespatial)
 #library(reshape)
 
 #PART ONE#
@@ -50,12 +47,12 @@ atlantic.fish.traits <- atlantic.fish.traits %>%
          Brack = abs(Brack),
          Saltwater = abs(Saltwater))
 
+
 #Data cleaning of unnecessary columns, such as references#
 
 fish.traits <- select(atlantic.fish.traits, -c ("Genus","Subfamily", "Family", "Order", "Class", "Phylum","Atlantic..Northwest","Common", "DemersPelagRef", "MigratRef", "DepthRangeRef", "DepthComRef","LTypeMaxM","LTypeComM","LTypeComF", "VerticalMoveRef", "LatMin", "LatMax", "LatRef", "LongevityWildRef", "MaxLengthRef","MaxWeightRef", "CommonLengthRef", "MainCatchingMethod", "II", "MSeines", "MGillnets", "MCastnets", "MTraps", "MTrawls", "MDredges", "MLiftnets", "MHooksLines", "MSpears", "MOther", "MobilityRef", "FecundityRef", "SpawnRef", "LarvalRef", "LLRef", "LVRef", "PLDRef", "ADRef", "RaftingRef", "SchoolingRef", "Notes", "Comments", "Website.Link"))
 
 #View current data format#
-View(fish.traits)
 
 fish.traits <- fish.traits[!is.na(fish.traits$LarvalStrategy),]
 
