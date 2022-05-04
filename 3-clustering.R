@@ -1,3 +1,5 @@
+library(cluster)
+library(gclus)
 
 # Attempting to cluster the distance metrics using UPGMA
 fish.traits.UPGMA <- hclust(fish.traits.dist, method = "average")
@@ -100,7 +102,7 @@ plot(
   main = "Fish Species Clustered by Dispersal Traits")
 #labels = cutree(fish.traits.UPGMA.60percent, k =33)
 
-rect.hclust(fish.traits.40NA.UPGMA.reordered, h = 0.15)
+rect.hclust(fish.traits.40NA.UPGMA.reordered, k=28)
 
 # Plot the final dendrogram with group colors (RGBCMY...)
 # Fast method using the additional hcoplot() function:
@@ -112,8 +114,15 @@ hcoplot(fish.traits.40NA.UPGMA.reordered, fish.traits.40NA.dist, k = 28)
 
 cutree <- cutree(fish.traits.40NA.UPGMA.reordered, k =28)
 
-clust.fish <- cbind(fish.traits.40NA, clusterID = cutree)
+fish.traits.40NA.clust <- cbind(fish.traits.40NA, clusterID = cutree)
 
-clust.fish$clusterID <- as.factor(clust.fish$clusterID)
+fish.traits.40NA.clust$clusterID <- as.factor(fish.traits.40NA.clust $clusterID)
 
 write.csv(clust.fish,"C:\\Users\\Danielle\\Documents\\Grad school\\FishTraitsClustered40.csv", row.names = TRUE)
+
+
+cutree <- cutree(fish.traits.60NA.UPGMA.reordered, k =28)
+
+fish.traits.60NA.clust <- cbind(fish.traits.60NA, clusterID = cutree)
+
+fish.traits.60NA.clust $clusterID <- as.factor(fish.traits.60NA.clust $clusterID)

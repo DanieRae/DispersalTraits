@@ -22,10 +22,18 @@ Abun.fish.biomass <- Abun.fish.biomass[, ..Abun.fish.names]
 
 Abun.fish.biomass <- as.matrix(Abun.fish.biomass)
 
+#####Betadiversity####
+
+beta.div.j<- lapply(fish.pa.pivot.mat, function(mat) {
+  mat <- beta.div.comp(mat, coef= "J", quant = T)
+  return(mat)
+  }
+)
+  
+
 #------ Function diversity measures --------
 
-Identity <- functcomp(fish.traits.40NA, 
-                      Abun.fish.biomass) 
+#Identity <- functcomp(fish.traits.40NA, Abun.fish.biomass) 
 
 functional.diversity.FT <- dbFD(fish.traits.40NA, 
                                 Abun.fish.biomass, corr = "lingoes")
@@ -49,7 +57,7 @@ FEve.comm %>%
     #xlab(paste("PCoA 1 -",fish.cdm.eig[1], "%", sep ="" ))+
     #ylab(paste("PCoA 2 -",fish.cdm.eig[2], "%", sep ="" ))+
     ggtitle("FEve community 201") +
-    geom_path() + 
+    geom_smooth() + 
     theme(legend.position="none", asp=1) +
     scale_color_grey()+
     facet_wrap(~stratum)
@@ -67,3 +75,48 @@ FEve.comm %>%
 
 #How does the FE diversity compare to hill numbers locally (alpha and gamma) gradients of beta accross the space
 
+#FD/depth
+
+FD.Depth.Year <-stratum.FE.depth %>%
+  filter(year_surv %in% c(1995,2000,2005,2010,2015,2017)) %>% 
+  ggplot(aes(x= depth, y= Unique_FE))+
+  geom_point()+
+  geom_smooth()+
+  facet_wrap(~year_surv)+
+  labs(x= "Stratum Depth",y= "Fungtional Groups")
+
+FEve.comm.depth <- merge (x = FEve.comm, y = stratum.new, by = "stratum")%>%
+  sf::st_as_sf()
+
+FEve.Depth.Year <-FEve.comm.depth %>%
+  filter(year %in% c(1995,2000,2005,2010,2015,2017)) %>% 
+  ggplot(aes(x= depth, y= V1))+
+  geom_point()+
+  geom_smooth()+
+  facet_wrap(~year)+
+  labs(x= "Stratum Depth",y= "Fungtional Evenness")
+
+#Abundance over time 
+
+#Abundance per community by year
+Abun.fish.FE <-fish.abun.clustCL %>%
+  #first find, for each trawl and each functional group clustered, the total biomass of that group in that trawl
+  group_by(stratum, year_surv, trip, set, clusterID)%>%
+  dplyr::summarize(group_biomass = sum(density_kgperkm2))%>%
+  #calculate average biomass per stratum for each functional group
+  group_by(stratum, year_surv, clusterID)%>%
+  dplyr::summarize(group_biomass = mean(group_biomass))
+
+#Clustered biomass from 1995- 2017
+
+Abun.fish.FE %>%
+  filter(year_surv %in% c(1995,2000,2005,2010,2015,2017)) %>% 
+  ggplot(aes(fill= clusterID,x= year_surv, y= group_biomass))+
+  geom_bar(position="stack", stat="identity")
+
+#biomass from 1995- 2017
+
+Abun.fish %>%
+  filter(year_surv %in% c(1995,2000,2005,2010,2015,2017)) %>% 
+  ggplot(aes(fill= taxa_name,x= year_surv, y= group_biomass))+
+  geom_bar(position="stack", stat="identity")
