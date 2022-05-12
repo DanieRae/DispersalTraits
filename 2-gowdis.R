@@ -1,6 +1,8 @@
 #Shall we analysis - removing data with too many NA for use, distance matrix and clustering#
 library(FD)
+
 library(skimr)
+
 
 #DATA FILTERING####
 # Apply function FUN to each column in the data.frame, returns
@@ -12,7 +14,9 @@ fish.traits.40Nas.columns <- names(fish.traits.NAs[fish.traits.NAs <= 40])
 
 fish.traits.40NA <- fish.traits[, fish.traits.40Nas.columns]
 
+
 skim <- skim(fish.traits.40NA)
+
 
 # Identify which columns have less than 40 NAs
 fish.traits.60NA.column<- names(fish.traits.NAs[fish.traits.NAs <= 58])
