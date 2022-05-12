@@ -44,7 +44,7 @@ FEve.comm <- cbind(functional.diversity.FT$FEve, stratum = year.strat$stratum, y
 
 FEve.comm <- as.data.frame(FEve.comm)
 
-CWM.comm <- cbind(functional.diversity.FT$CWM, stratum = year.strat$stratum, year = year.strat$year_surv)
+CWM.comm <- cbind(stratum = year.strat$stratum, functional.diversity.FT$CWM, year = year.strat$year_surv)
 
 #Some plots to visualize the functional evenness by community over time. 
 

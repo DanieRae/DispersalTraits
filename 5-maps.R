@@ -16,6 +16,8 @@ strata.depth <- select (strata.depth, c("stratum", "depth")) %>%
 # read all files of the shapefile
 stratum.shpfile <- st_read("strata/all_strata.shp")
 
+missingdepth<- stratum.new[!stratum.new$stratum %in% strata.depth$stratum,]
+
 #Strata geometry
 stratum.new <- select(stratum.shpfile, -c ("DIV", "strtm_t")) %>% 
   # Validating geometries to make operations on them 
@@ -24,6 +26,18 @@ stratum.new <- select(stratum.shpfile, -c ("DIV", "strtm_t")) %>%
   group_by(stratum) %>% 
   # Combining all polygons that have the same stratum ID
   dplyr::summarize(geometry = st_union(geometry))
+
+# Trying to fix broken/missing stratums
+stratum.new.broken <- select(stratum.shpfile, -c ("DIV", "strtm_t")) %>% 
+  # Validating geometries to make operations on them 
+  st_make_valid() %>%  
+  # grouping by the stratum id
+  group_by(stratum) %>% 
+  # Combining all polygons that have the same stratum ID
+  dplyr::summarize(geometry = st_union(geometry)) %>% 
+  # trying to get brokenstratums
+  dplyr::filter(nchar(stratum) > 3)
+
 
 plot(stratum.new$geometry)
 

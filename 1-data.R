@@ -56,7 +56,7 @@ fish.traits <- select(atlantic.fish.traits, -c ("Genus","Subfamily", "Family", "
 
 fish.traits <- fish.traits[!is.na(fish.traits$LarvalStrategy),]
 
-
+skim.tot <- skim(fish.traits)
 #PART TWO#
 #Load abundance data#
 
