@@ -2,6 +2,8 @@ library(sf)
 library(ggplot2)
 library(ggforce)
 library(patchwork)
+library(dplyr)
+library(stringr)
 
 # library(tmap)
 
@@ -14,34 +16,29 @@ strata.depth <- select (strata.depth, c("stratum", "depth")) %>%
   dplyr::summarize(depth = mean(depth))
 
 # read all files of the shapefile
-stratum.shpfile <- st_read("strata/all_strata.shp")
-
-missingdepth<- stratum.new[!stratum.new$stratum %in% strata.depth$stratum,]
-
-#Strata geometry
-stratum.new <- select(stratum.shpfile, -c ("DIV", "strtm_t")) %>% 
+stratum.shpfile <- st_read("strata/all_strata.shp") %>% 
   # Validating geometries to make operations on them 
   st_make_valid() %>%  
-  # grouping by the stratum id
-  group_by(stratum) %>% 
-  # Combining all polygons that have the same stratum ID
-  dplyr::summarize(geometry = st_union(geometry))
+  mutate(stratum_id_base = str_sub(stratum, 1, 3)) %>% 
+  group_by(stratum_id_base) %>% 
+  summarise(geometry = st_union(geometry))
 
-# Trying to fix broken/missing stratums
-stratum.new.broken <- select(stratum.shpfile, -c ("DIV", "strtm_t")) %>% 
-  # Validating geometries to make operations on them 
-  st_make_valid() %>%  
-  # grouping by the stratum id
-  group_by(stratum) %>% 
-  # Combining all polygons that have the same stratum ID
-  dplyr::summarize(geometry = st_union(geometry)) %>% 
-  # trying to get brokenstratums
-  dplyr::filter(nchar(stratum) > 3)
+missingdepth<- stratum.shpfile[!stratum.shpfile$stratum %in% strata.depth$stratum,]
 
+# # Trying to fix broken/missing stratums
+# stratum.shpfile.broken <- select(stratum.shpfile, -c ("DIV", "strtm_t")) %>% 
+#   # Validating geometries to make operations on them 
+#   st_make_valid() %>%  
+#   # grouping by the stratum id
+#   group_by(stratum) %>% 
+#   # Combining all polygons that have the same stratum ID
+#   dplyr::summarize(geometry = st_union(geometry)) %>% 
+#   # trying to get brokenstratums
+#   dplyr::filter(nchar(stratum) > 3)
 
-plot(stratum.new$geometry)
+plot(stratum.shpfile$geometry)
 
-stratum.new <- merge(x =stratum.new, y=strata.depth,by = "stratum" )
+stratum.shpfile <- merge(x =stratum.shpfile, y=strata.depth,by = "stratum" )
 
 ##Lets add the cluster IDs to the abundance data. Seems like it could be useful 
 
@@ -63,7 +60,7 @@ fish.abun.gr <- fish.abun.clustCL %>%
 #join stratum table and unique FE table 
 #first I need to filter teh data because I don't have the infor for all stratum
 
-stratum.FE <- merge(x = fish.abun.gr, y= stratum.new, by = "stratum", all.y = TRUE)%>%
+stratum.FE <- merge(x = fish.abun.gr, y= stratum.shpfile, by = "stratum", all.y = TRUE)%>%
   sf::st_as_sf()
 
 stratum.FE.depth <- merge (x = stratum.FE, y = strata.depth, by = "stratum")%>%
@@ -173,7 +170,7 @@ effective.FD <- fish.abun.clean.summary.FD %>%
   
   # We join to the stratum spatial data
   fish.beta.FD.df.full.joined <- fish.beta.FD.df.full %>% 
-    left_join(stratum.new, by = "stratum") %>% 
+    left_join(stratum.shpfile, by = "stratum") %>% 
     st_as_sf()
 
 #Beta Clustered Map 1----
@@ -267,7 +264,7 @@ fish.beta.df.full <- bind_rows(fish.beta.df)
 
 # We join to the stratum spatial data
 fish.beta.df.full.joined <- fish.beta.df.full %>% 
-  left_join(stratum.new, by = "stratum") %>% 
+  left_join(stratum.shpfile, by = "stratum") %>% 
   st_as_sf()
 
 #Beta map 1----
@@ -296,10 +293,10 @@ effective.species <- fish.abun.clean.summary  %>%
   dplyr::summarize(effective_species = exp(diversity(group_biomass, "shannon")))
 
 
-effective.FD.strata <- merge(x = effective.FD , y= stratum.new, by = "stratum", all.y = TRUE) %>% 
+effective.FD.strata <- merge(x = effective.FD , y= stratum.shpfile, by = "stratum", all.y = TRUE) %>% 
   sf::st_as_sf()
 
-effective.species.strata <- merge(x = effective.species, y= stratum.new, by = "stratum", all.y = TRUE) %>% 
+effective.species.strata <- merge(x = effective.species, y= stratum.shpfile, by = "stratum", all.y = TRUE) %>% 
   sf::st_as_sf()
 
 # MAP
