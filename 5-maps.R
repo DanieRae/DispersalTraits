@@ -21,7 +21,8 @@ stratum.shpfile <- st_read("strata/all_strata.shp") %>%
   st_make_valid() %>%  
   mutate(stratum_id_base = str_sub(stratum, 1, 3)) %>% 
   group_by(stratum_id_base) %>% 
-  summarise(geometry = st_union(geometry))
+  summarise(geometry = st_union(geometry))%>%
+  rename(stratum = stratum_id_base)
 
 missingdepth<- stratum.shpfile[!stratum.shpfile$stratum %in% strata.depth$stratum,]
 
@@ -72,13 +73,13 @@ map.test <- stratum.FE.depth %>%
   geom_sf(aes(fill = depth))+
   scale_fill_gradient(low = 'white', high = "purple")
 
-map1 <- stratum.FE %>% facet_wrap(~year_surv)
+map1 <- stratum.FE %>% 
   filter(year_surv %in% c(1995)) %>% 
   ggplot() +
   geom_sf(aes(fill = Unique_FE)) +
   ggtitle(label = "Dispersal Richness") +
   scale_fill_viridis_c () +
-  theme_light() +
+  theme_light() 
   
   #ggforce::facet_wrap_paginate(~year_surv,
                               # nrow = 2, ncol = 2, page = 2)
