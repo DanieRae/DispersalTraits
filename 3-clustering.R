@@ -1,7 +1,8 @@
+#Libraries----
 library(cluster)
 library(gclus)
 
-# Attempting to cluster the distance metrics using UPGMA
+#Cluster using UPGMA----
 fish.traits.UPGMA <- hclust(fish.traits.dist, method = "average")
 plot(fish.traits.UPGMA,hang= -1)
 
@@ -25,7 +26,7 @@ plot(dend)
 
 # Shameless code steal from numerical ecology in R
 
-# Reorder clusters -------------------------------
+## Reorder clusters----
 fish.traits.UPGMA.reordered <- reorder(fish.traits.UPGMA, fish.traits.dist)
 plot(fish.traits.UPGMA.reordered, hang =-1)
 
@@ -110,7 +111,7 @@ rect.hclust(fish.traits.40NA.UPGMA.reordered, k=28)
 source("functions/hcoplot.R")
 hcoplot(fish.traits.40NA.UPGMA.reordered, fish.traits.40NA.dist, k = 28)
 
-#adding cluster ID to data
+##Adding cluster ID to data----
 
 cutree <- cutree(fish.traits.40NA.UPGMA.reordered, k =28)
 
@@ -118,7 +119,8 @@ fish.traits.40NA.clust <- cbind(fish.traits.40NA, clusterID = cutree)
 
 fish.traits.40NA.clust$clusterID <- as.factor(fish.traits.40NA.clust $clusterID)
 
-write.csv(clust.fish,"C:\\Users\\Danielle\\Documents\\Grad school\\FishTraitsClustered40.csv", row.names = TRUE)
+#Write to CSV to determine what traits define each group
+#write.csv(clust.fish,"C:\\Users\\Danielle\\Documents\\Grad school\\FishTraitsClustered40.csv", row.names = TRUE)
 
 
 cutree <- cutree(fish.traits.60NA.UPGMA.reordered, k =28)

@@ -67,7 +67,7 @@ stratum.FE <- merge(x = fish.abun.gr, y= stratum.shpfile, by = "stratum", all.y 
 stratum.FE.depth <- merge (x = stratum.FE, y = strata.depth, by = "stratum")%>%
   sf::st_as_sf()
 
-#MAP TESTS ----
+##MAP TESTS ----
 map.test <- stratum.FE.depth %>%
   ggplot()+
   geom_sf(aes(fill = depth))+
@@ -174,7 +174,7 @@ effective.FD <- fish.abun.clean.summary.FD %>%
     left_join(stratum.shpfile, by = "stratum") %>% 
     st_as_sf()
 
-#Beta Clustered Map 1----
+##Beta Clustered Map 1----
 # We select the years and plot
 beta.map.FD <- fish.beta.FD.df.full.joined %>% 
     filter(from_year == 1996, to_year == 2017) %>% 
@@ -268,7 +268,7 @@ fish.beta.df.full.joined <- fish.beta.df.full %>%
   left_join(stratum.shpfile, by = "stratum") %>% 
   st_as_sf()
 
-#Beta map 1----
+##Beta map 1----
 # We select the years and plot
 beta.map <- fish.beta.df.full.joined %>% 
   filter(from_year == 1996, to_year == 2017) %>% 

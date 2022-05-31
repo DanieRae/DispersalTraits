@@ -1,10 +1,8 @@
-#Shall we analysis - removing data with too many NA for use, distance matrix and clustering#
+#Libraries---- 
 library(FD)
-
 library(skimr)
 
-
-#DATA FILTERING####
+#DATA FILTERING----
 # Apply function FUN to each column in the data.frame, returns
 # a vector containing how many NAs are in a given column
 fish.traits.NAs <- apply(fish.traits, FUN=function(x){sum(is.na(x))}, MARGIN = 2)
@@ -14,11 +12,11 @@ fish.traits.40Nas.columns <- names(fish.traits.NAs[fish.traits.NAs <= 40])
 
 fish.traits.40NA <- fish.traits[, fish.traits.40Nas.columns]
 
-
+##Skimming data for structure----
 skim <- skim(fish.traits.40NA)
 
 
-# Identify which columns have less than 40 NAs
+# Identify which columns have less than 60 NAs
 fish.traits.60NA.column<- names(fish.traits.NAs[fish.traits.NAs <= 58])
 
 fish.traits.60NA <- fish.traits[, fish.traits.60NA.column]
@@ -38,7 +36,7 @@ fish.traits.60NA.dist <- gowdis(fish.traits.60NA, asym.bin = NULL)
 fish.traits.60NA.dist
 
 
-##ONEHOT
+#ONEHOT----
 
 fish.traits.40NA.hot <- one_hot(as.data.table(fish.traits.40NA))
 fish.traits.40NA.hot.dist <-gowdis(fish.traits.40NA.hot, asym.bin = NULL)

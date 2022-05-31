@@ -1,9 +1,8 @@
-#Install and load packages, istallation shouldn't be necessary again# 
+#Install and load packages, istallation shouldn't be necessary again----
 
 # install.packages("devtools")
 # install_github("vqv/ggbiplot")
-#install.packages("reshape")
-
+# install.packages("reshape")
 
 library(dplyr)
 library(tidyr)
@@ -17,9 +16,7 @@ library(ade4)
 library(adespatial)
 #library(reshape)
 
-#PART ONE#
-#load full data and view it#
-
+#Load/clean fish trait data----
 raw.fish.traits <- read.csv("AtlanticFishTraits.csv", fileEncoding ="UTF-8-BOM", stringsAsFactors = TRUE)
 
 #this was recommended to keep data in an easier format for analysis#
@@ -29,10 +26,8 @@ raw.fish.traits <- read.csv("AtlanticFishTraits.csv", fileEncoding ="UTF-8-BOM",
 atlantic.fish.traits <- raw.fish.traits %>% droplevels()
 
 #Making species name the row names and shortening them - might want to remove this as it is causing problems with the visuals on the plots#
-
 rownames(atlantic.fish.traits) <- atlantic.fish.traits[,1]
 atlantic.fish.traits[,1] <- NULL
-
 
 old_rownames <- rownames(atlantic.fish.traits)
 new_rownames <- unlist(lapply(lapply(str_split(old_rownames, " "), 
@@ -40,34 +35,26 @@ new_rownames <- unlist(lapply(lapply(str_split(old_rownames, " "),
 new_rownames[new_rownames == "Myo_sco"] <- c("Myo_sco_1", "Myo_sco_2")
 rownames(atlantic.fish.traits) <- sort(new_rownames, decreasing = FALSE)
  
-
 #quick mutate to remove negative values in these columns#
 atlantic.fish.traits <- atlantic.fish.traits %>%
   mutate(Fresh = abs(Fresh),
          Brack = abs(Brack),
          Saltwater = abs(Saltwater))
 
-
-#Data cleaning of unnecessary columns, such as references#
-
+##Data cleaning of unnecessary columns, such as references----
 fish.traits <- select(atlantic.fish.traits, -c ("Genus","Subfamily", "Family", "Order", "Class", "Phylum","Atlantic..Northwest","Common", "DemersPelagRef", "MigratRef", "DepthRangeRef", "DepthComRef","LTypeMaxM","LTypeComM","LTypeComF", "VerticalMoveRef", "LatMin", "LatMax", "LatRef", "LongevityWildRef", "MaxLengthRef","MaxWeightRef", "CommonLengthRef", "MainCatchingMethod", "II", "MSeines", "MGillnets", "MCastnets", "MTraps", "MTrawls", "MDredges", "MLiftnets", "MHooksLines", "MSpears", "MOther", "MobilityRef", "FecundityRef", "SpawnRef", "LarvalRef", "LLRef", "LVRef", "PLDRef", "ADRef", "RaftingRef", "SchoolingRef", "Notes", "Comments", "Website.Link"))
 
-#View current data format#
-
+#Removing rows with missing larval strategy 
 fish.traits <- fish.traits[!is.na(fish.traits$LarvalStrategy),]
 
-
+###skimming data for structure----
 skim.tot <- skim(fish.traits)
 
 
-#PART TWO#
-#Load abundance data#
-
+#Load/clean fish abundance data----
 fish.abun <- read.csv("NL_Biomass.csv", fileEncoding ="UTF-8-BOM")
 
-
 #I need to make the taxa names match with the other data set
-
 rownames.fish.traits <- rownames(fish.traits)
 
 #This takes the species list and puts it into a character#

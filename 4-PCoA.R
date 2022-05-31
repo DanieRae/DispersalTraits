@@ -1,6 +1,6 @@
 # PCOA two function produce similar plots, cmdscale has open circles and pcoa uses the species names 
 
-# CMDSCALE pcoa method with ggplot (RUN SHEET 5)####
+# CMDSCALE pcoa method with ggplot####
 
 
 fish.cmd <- cmdscale(fish.traits.40NA.dist, eig = TRUE, x.ret = TRUE, k =2)
