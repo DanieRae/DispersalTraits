@@ -1,5 +1,11 @@
 #Statistics and response variables#
 
+library(grid)
+library(gridExtra)
+library(lme4)
+library(sjPlot)
+
+
 #NOTES ----
 #With the clustering of the species here a a few responses that should be looked at#
 
@@ -50,10 +56,14 @@ beta.div.j<- lapply(fish.pa.pivot.mat, function(mat) {
 
 #Function diversity measures --------
 
-Identity <- functcomp(fish.traits.40NA, Abun.fish.biomass) 
+#Identity <- functcomp(fish.traits.40NA, Abun.fish.biomass) 
 
-functional.diversity.FT <- dbFD(fish.traits.40NA, 
-                                Abun.fish.biomass, corr = "lingoes")
+#functional.diversity.FT <- dbFD(fish.traits.40NA, 
+                                #Abun.fish.biomass, corr = "lingoes")
+
+saveRDS(functional.diversity.FT, file = "FunctionalDiv.rds")
+
+functional.diversity.FT <-readRDS("FunctionalDiv.rds")
 
 year.strat <- select(Abun.fish.wide, c("stratum", "year_surv"))
 
@@ -126,7 +136,7 @@ Abun.fish.SD <-Abun.fish %>%
  
  
 ##sd plot----
-Abun.fish.SD <- Abun.fish.SD %>% rename(year = year_surv)
+Abun.fish.SD <- Abun.fish.SD %>% dplyr::rename(year = year_surv)
 Abun.fish.FEve <- merge (x = FEve.comm, y = Abun.fish.SD)
 Abun.fish.FEve$year <- as.factor(Abun.fish.FEve$year)
 
@@ -164,21 +174,84 @@ Abun.fish.rate.SD <-Abun.fish.rate %>%
 
 ##Rate of change plot----
 
-Abun.fish.rate.SD <- Abun.fish.rate.SD %>% rename(year = year_surv)
+Abun.fish.rate.SD <- Abun.fish.rate.SD %>% dplyr::rename(year = year_surv)
 Abun.fish.rate.SD.FEve <- merge (x = FEve.comm, y = Abun.fish.rate.SD)
 Abun.fish.rate.SD.FEve$year <- as.factor(Abun.fish.rate.SD.FEve$year)
+Abun.fish.rate.SD.FEve$stratum <- as.factor(Abun.fish.rate.SD.FEve$stratum)
 
 plot.SDratechange <- Abun.fish.rate.SD.FEve %>%
-  filter (year %in% c(1995,2000,2005,2010,2015,2017)) %>%
+  filter (stratum %in% c(201:210)) %>%
+  #filter (year %in% c(1996,2000,2005,2010,2015,2017)) %>%
   ggplot(aes(x= V1, y= sd2.rate.change))+
   labs(title = "Temporal varation in biomass for NFL as a response to community functional evenness") +
   xlab ("Functional Evenness") +
-  ylab ("Log(SD(biomass)^-1)")+
+  ylab ("Rate of biomass change")+
   geom_point()+
-  geom_smooth(method = lm, aes(color = year))
+  geom_smooth(method = lm, aes(color = stratum))+
+  theme_light()
+  #facet_wrap(~year)
+  theme(legend.position = 'none')
+
+
+plot.SDratechange
 #ylim(0,2000)
 #facet_wrap(~year)
 
+##Model rate of biomass change----
+
+###Trying with lm models, checking residuals----
+#have to scale the variables as they have different scales
+Abun.fish.rate.SD.FEve$Z_V1 <- scale(Abun.fish.rate.SD.FEve$V1)
+Abun.fish.rate.SD.FEve$Z_sd2 <- scale(Abun.fish.rate.SD.FEve$sd2.rate.change )
+
+#too many rows with NAs to model
+rate.feve.noNA<-Abun.fish.rate.SD.FEve[complete.cases(Abun.fish.rate.SD.FEve),]
+
+#Trying data out in a linear model
+lm.test<-lm(Z_sd2 ~ Z_V1, data=rate.feve.noNA)
+lm.test.resid <- rstandard(lm.test)
+
+#testing model residuals against the random factors to determine if they need to be included
+plot(lm.test.resid ~ as.factor(rate.feve.noNA$stratum),
+     xlab = "Stratum", ylab = "Standardized residuals")
+abline(0, 0, lty = 2)
+
+plot(lm.test.resid ~ as.factor(rate.feve.noNA$year),
+     xlab = "Year", ylab = "Standardized residuals")
+abline(0, 0, lty = 2)
+#there is a lot of variation around the means, this indicates that these factors should be included
+
+###Lets try with glm
+glm1 <- glmer(sd2.rate.change ~ V1 + stratum + (1|year),
+     data=rate.feve.noNA, family = gaussian(link = "log"))
+
+source(file = "functions/glmm_funs.R")
+
+if (!require("coefplot2"))
+  remotes::install_github("palday/coefplot2",
+                          subdir = "pkg",
+                          upgrade = "always",
+                          quiet = TRUE)
+
+library(coefplot2)
+overdisp_fun(glm1)
+
+summary(glm1)
+tab_model(glm1)
+sjPlot::plot_model(glm1)
+
+effects.V1 <- effect(term = "V1", mod = glm1)
+effects.V1 <- as.data.frame(effects.V1)
+
+rate.feve.noNA.fit <- filter(rate.feve.noNA, stratum %in% c(201:202))
+
+
+ggplot()+
+  geom_point(data = rate.feve.noNA.fit, aes(x= V1, y= sd2.rate.change))+
+  geom_point(data = effects.V1, aes(x= V1, y= fit), color = "red")+
+  geom_line(data = effects.V1, aes(x= V1, y= fit), color = "red")+
+  geom_ribbon(data = effects.V1, aes (x= V1, ymin= lower, ymax= upper), alpha= 0.3, fill = "red")+
+  facet_wrap(~stratum)
 
 #Effective species vs FEve----
 effective.species <- effective.species %>% rename(year = year_surv)
@@ -195,3 +268,5 @@ plot.effective.FEve <- effective.species.FEve %>%
   geom_point()+
   geom_smooth(method = lm, aes(color = year))
 #ylim(0,2000)
+
+

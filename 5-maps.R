@@ -9,22 +9,23 @@ library(stringr)
 
 # Import the strata data ------
 #Strata depth
-strata.depth <- read.csv("shrimp_current_length_data.csv", fileEncoding ="UTF-8-BOM", stringsAsFactors = TRUE)
 
-strata.depth <- select (strata.depth, c("stratum", "depth")) %>%
-  group_by(stratum)%>%
-  dplyr::summarize(depth = mean(depth))
+#strata.depth <- read.csv("shrimp_current_length_data.csv", fileEncoding ="UTF-8-BOM", stringsAsFactors = TRUE)
+
+#strata.depth <- select (strata.depth, c("stratum", "depth")) %>%
+  #group_by(stratum)%>%
+  #dplyr::summarize(depth = mean(depth))
 
 # read all files of the shapefile
 stratum.shpfile <- st_read("strata/all_strata.shp") %>% 
   # Validating geometries to make operations on them 
   st_make_valid() %>%  
-  mutate(stratum_id_base = str_sub(stratum, 1, 3)) %>% 
+  dplyr::mutate(stratum_id_base = str_sub(stratum, 1, 3)) %>% 
   group_by(stratum_id_base) %>% 
-  summarise(geometry = st_union(geometry))%>%
-  rename(stratum = stratum_id_base)
+  dplyr::summarise(geometry = st_union(geometry))%>%
+  dplyr::rename(stratum = stratum_id_base)
 
-missingdepth<- stratum.shpfile[!stratum.shpfile$stratum %in% strata.depth$stratum,]
+#missingdepth<- stratum.shpfile[!stratum.shpfile$stratum %in% strata.depth$stratum,]
 
 # # Trying to fix broken/missing stratums
 # stratum.shpfile.broken <- select(stratum.shpfile, -c ("DIV", "strtm_t")) %>% 
