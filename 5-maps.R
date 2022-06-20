@@ -75,12 +75,13 @@ map.test <- stratum.FE.depth %>%
   scale_fill_gradient(low = 'white', high = "purple")
 
 map1 <- stratum.FE %>% 
-  filter(year_surv %in% c(1995)) %>% 
+  filter(year_surv %in% c(1995,2000,2005,2010,2015,2017)) %>% 
   ggplot() +
   geom_sf(aes(fill = Unique_FE)) +
   ggtitle(label = "Dispersal Richness") +
   scale_fill_viridis_c () +
-  theme_light() 
+  theme_light()+
+  facet_wrap(~year_surv)
   
   #ggforce::facet_wrap_paginate(~year_surv,
                               # nrow = 2, ncol = 2, page = 2)

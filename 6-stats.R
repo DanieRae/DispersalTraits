@@ -4,7 +4,7 @@ library(grid)
 library(gridExtra)
 library(lme4)
 library(sjPlot)
-
+library(FD)
 
 #NOTES ----
 #With the clustering of the species here a a few responses that should be looked at#
@@ -19,24 +19,16 @@ library(sjPlot)
 
 
 #Abundance ----
-##Per taxa by year within strata----
-Abun.fish <-fish.abun.clean %>%
-  #first find, for each trawl and each functional group, the total biomass of that group in that trawl
-  group_by(stratum, year_surv, vessel, trip, set, taxa_name)%>%
-  dplyr::summarize(group_biomass = sum(density_kgperkm2))%>%
-  #calculate average biomass per stratum for each functional group
-  group_by(stratum, year_surv, taxa_name)%>%
-  dplyr::summarize(group_biomass = mean(group_biomass))
 
 ##Total biomass per strata/year----
-Abun.fish.strata <-Abun.fish %>%
+Abun.fish.strata <-fish.abun.complete %>%
   group_by(stratum, year_surv)%>%
-  dplyr::summarize(group_biomass = mean(group_biomass))
+  dplyr::summarize(group_biomass = sum(final_biomass))
 
 #Wide version of the abundance by site (strata,year)----
-Abun.fish.wide <- as.data.table (spread(Abun.fish, taxa_name, group_biomass, fill = 0))
+Abun.fish.wide <- as.data.table (spread(fish.abun.complete, taxa_name, final_biomass, fill = 0))
 
-Abun.fish.biomass <- select(Abun.fish.wide, -c ("stratum", "year_surv"))
+Abun.fish.biomass <- select(Abun.fish.wide, -c ("stratum", "year_surv","weight"))
 
 Abun.fish.names <- sort(names(Abun.fish.biomass),decreasing = FALSE)
 
@@ -56,10 +48,9 @@ beta.div.j<- lapply(fish.pa.pivot.mat, function(mat) {
 
 #Function diversity measures --------
 
-#Identity <- functcomp(fish.traits.40NA, Abun.fish.biomass) 
+Identity <- functcomp(fish.traits.40NA, Abun.fish.biomass) 
 
-#functional.diversity.FT <- dbFD(fish.traits.40NA, 
-                                #Abun.fish.biomass, corr = "lingoes")
+functional.diversity.FT <- dbFD(fish.traits.40NA, Abun.fish.biomass, corr = "lingoes")
 
 saveRDS(functional.diversity.FT, file = "FunctionalDiv.rds")
 
@@ -119,10 +110,10 @@ FEve.Depth.Year <-FEve.comm.depth %>%
 #Abundance over time, sd by FEve----
 
 #Abundance per community by year
-Abun.fish.SD <-Abun.fish %>%
+Abun.fish.SD <-fish.abun.complete %>%
   #what is the SD of the biomass 
   group_by(stratum, year_surv)%>%
-  dplyr::summarize(group_SD = sd(group_biomass)) %>%
+  dplyr::summarize(group_SD = weighted.sd(final_biomass,weight)) %>%
   #log transform this to have a less scew?
   group_by(stratum, year_surv)%>%
   dplyr::mutate(log_SD = log(group_SD)) %>%
@@ -155,14 +146,17 @@ plot.logSD <- Abun.fish.FEve %>%
 
 Abun.fish.rate <-Abun.fish %>%
   #what is the rate of change of biomass in a strata from year1-yearn
-  #Rate of biomass change from one year to another
-  group_by(stratum,taxa_name)%>%
+  #Rate of biomass change from one year to another for the entire biomass
+  group_by(stratum, year_surv)%>%
+  dplyr::summarize(total_group_biomass = sum(group_biomass))%>%
+  group_by(stratum)%>%
+  #because we don't have individual taxa we can;t look at sd
   arrange(stratum, year_surv)%>%
-  dplyr::mutate(rate.change = log(group_biomass / lag(group_biomass))) 
+  dplyr::mutate(rate.change = log(total_group_biomass / lag(total_group_biomass))) 
 
-Abun.fish.rate.SD <-Abun.fish.rate %>%
-  group_by(stratum,year_surv)%>%
-  dplyr:: summarise(sd2.rate.change = (sd(rate.change, na.rm = TRUE))^2)
+#Abun.fish.rate.SD <-Abun.fish.rate %>%
+  #group_by(stratum,year_surv)%>%
+  #dplyr:: summarise(sd2.rate.change = (sd(rate.change, na.rm = TRUE))^2)
 
 #Trying by hand/fail  
 #Sum of the rate of change, if 1 NA is present it is summing to NA  
@@ -174,22 +168,22 @@ Abun.fish.rate.SD <-Abun.fish.rate %>%
 
 ##Rate of change plot----
 
-Abun.fish.rate.SD <- Abun.fish.rate.SD %>% dplyr::rename(year = year_surv)
-Abun.fish.rate.SD.FEve <- merge (x = FEve.comm, y = Abun.fish.rate.SD)
-Abun.fish.rate.SD.FEve$year <- as.factor(Abun.fish.rate.SD.FEve$year)
-Abun.fish.rate.SD.FEve$stratum <- as.factor(Abun.fish.rate.SD.FEve$stratum)
+Abun.fish.rate <- Abun.fish.rate %>% dplyr::rename(year = year_surv)
+Abun.fish.rate.FEve <- merge (x = FEve.comm, y = Abun.fish.rate)
+Abun.fish.rate.FEve$year <- as.factor(Abun.fish.rate.FEve$year)
+Abun.fish.rate.FEve$stratum <- as.factor(Abun.fish.rate.FEve$stratum)
 
-plot.SDratechange <- Abun.fish.rate.SD.FEve %>%
-  filter (stratum %in% c(201:210)) %>%
-  #filter (year %in% c(1996,2000,2005,2010,2015,2017)) %>%
-  ggplot(aes(x= V1, y= sd2.rate.change))+
+plot.SDratechange <- Abun.fish.rate.FEve %>%
+  #filter (stratum %in% c(201:210)) %>%
+  filter (year %in% c(1996,2000,2005,2010,2015,2017)) %>%
+  ggplot(aes(x= V1, y= rate.change))+
   labs(title = "Temporal varation in biomass for NFL as a response to community functional evenness") +
   xlab ("Functional Evenness") +
   ylab ("Rate of biomass change")+
   geom_point()+
-  geom_smooth(method = lm, aes(color = stratum))+
-  theme_light()
-  #facet_wrap(~year)
+  geom_smooth(method = lm)+
+  theme_light()+
+  #facet_wrap(~year)+
   theme(legend.position = 'none')
 
 
@@ -201,8 +195,8 @@ plot.SDratechange
 
 ###Trying with lm models, checking residuals----
 #have to scale the variables as they have different scales
-Abun.fish.rate.SD.FEve$Z_V1 <- scale(Abun.fish.rate.SD.FEve$V1)
-Abun.fish.rate.SD.FEve$Z_sd2 <- scale(Abun.fish.rate.SD.FEve$sd2.rate.change )
+Abun.fish.rate.FEve$Z_V1 <- scale(Abun.fish.rate.SD.FEve$V1)
+Abun.fish.rate.FEve$Z_sd2 <- scale(Abun.fish.rate.SD.FEve$sd2.rate.change )
 
 #too many rows with NAs to model
 rate.feve.noNA<-Abun.fish.rate.SD.FEve[complete.cases(Abun.fish.rate.SD.FEve),]
@@ -222,7 +216,7 @@ abline(0, 0, lty = 2)
 #there is a lot of variation around the means, this indicates that these factors should be included
 
 ###Lets try with glm
-glm1 <- glmer(sd2.rate.change ~ V1 + stratum + (1|year),
+glm1 <- glmer(sd2.rate.change ~ V1 + (1|stratum) + (1|year),
      data=rate.feve.noNA, family = gaussian(link = "log"))
 
 source(file = "functions/glmm_funs.R")
@@ -253,6 +247,24 @@ ggplot()+
   geom_ribbon(data = effects.V1, aes (x= V1, ymin= lower, ymax= upper), alpha= 0.3, fill = "red")+
   facet_wrap(~stratum)
 
+##Trying gams time
+library(mgcv)
+
+gam2 <- gam(sd2.rate.change ~ V1 ,
+            data=rate.feve.noNA)
+summary(gam1)
+
+data_plot <- ggplot(data = rate.feve.noNA, aes(y = sd2.rate.change, x = V1)) + 
+  geom_point() +
+  geom_line(aes(y = fitted(gam1)),
+            colour = "red", size = 1.2) + 
+  geom_line(aes(y = fitted(gam2)),
+            colour = "blue", size = 1.2)+
+  theme_bw()
+data_plot
+plot(gam1)
+
+AIC(gam1, gam2)
 #Effective species vs FEve----
 effective.species <- effective.species %>% rename(year = year_surv)
 effective.species.FEve <- merge (x = FEve.comm, y = effective.species)

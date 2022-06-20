@@ -79,3 +79,30 @@ fish.abun <- cbind(fish.abun, taxa_name = new_species_name)
 # %in% use for comparing two vectors of unequal length#
 
 fish.abun.clean <- fish.abun %>% filter(taxa_name %in% rownames.fish.traits)
+
+
+#table of minimun biomass values
+min_biomass<-fish.abun.clean %>%
+  group_by(taxa_name)%>%
+  dplyr::summarise(min_biomass = min(density_kgperkm2)) 
+
+fish.abun.clean.subset<-fish.abun.clean %>%
+  #first find, for each trawl and each functional group, the total biomass of that group in that trawl
+  group_by(stratum, year_surv, vessel, trip, set, taxa_name)%>%
+  dplyr::summarize(group_biomass = sum(density_kgperkm2))%>%
+  group_by(stratum, year_surv, taxa_name)%>%
+  dplyr::summarize(group_biomass = mean(group_biomass))%>% 
+  ungroup()
+
+fish.abun.clean.complete <- fish.abun.clean.subset %>%
+  #filter(year_surv == 1996)%>%
+  #select(taxa_name, stratum, year_surv)%>%
+  tidyr::complete(nesting(stratum,year_surv),taxa_name) 
+
+
+fish.abun.complete<- fish.abun.clean.complete %>%
+  left_join(min_biomass)%>%
+  mutate(final_biomass = ifelse(is.na(group_biomass),min_biomass, group_biomass)) %>%
+  mutate(weight = ifelse(is.na(group_biomass),0, 1))%>%
+  select(-c("group_biomass","min_biomass"))
+
