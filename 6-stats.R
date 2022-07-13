@@ -1,5 +1,6 @@
 #Statistics and response variables#
 
+#Packages----
 library(grid)
 library(gridExtra)
 library(lme4)
@@ -19,13 +20,13 @@ library(FD)
 
 
 #Abundance ----
-
+#
 ##Total biomass per strata/year----
 Abun.fish.strata <-fish.abun.complete %>%
   group_by(stratum, year_surv)%>%
   dplyr::summarize(group_biomass = sum(final_biomass))
 
-#Wide version of the abundance by site (strata,year)----
+##Wide version of the abundance by site (strata,year)----
 Abun.fish.wide <- as.data.table (spread(fish.abun.complete, taxa_name, final_biomass, fill = 0))
 
 Abun.fish.biomass <- select(Abun.fish.wide, -c ("stratum", "year_surv","weight"))
@@ -44,13 +45,31 @@ beta.div.j<- lapply(fish.pa.pivot.mat, function(mat) {
   return(mat)
   }
 )
-  
+
+
+#Effective species vs FEve----
+effective.species <- dplyr::rename(effective.species, year = year_surv)
+effective.species.FEve <- merge (x = FEve.comm, y = effective.species)
+effective.species.FEve$year <- as.factor(effective.species.FEve$year)
+
+##Effective species/FEve plot----
+
+plot.effective.FEve <- effective.species.FEve %>%
+  filter (year %in% c(1995,2000,2005,2010,2015,2017)) %>%
+  ggplot(aes(x= effective_species, y= V1))+
+  labs(title = "Relationship between FEve and Effective species") +
+  xlab ("Effective species") +
+  ylab ("Functional Evenness")+
+  geom_point()+
+  geom_smooth(method = lm, aes(color = year))+
+  facet_wrap(~year)
+#ylim(0,2000)  
 
 #Function diversity measures --------
 
 Identity <- functcomp(fish.traits.40NA, Abun.fish.biomass) 
 
-functional.diversity.FT <- dbFD(fish.traits.40NA, Abun.fish.biomass, corr = "lingoes")
+#functional.diversity.FT <- dbFD(fish.traits.40NA, Abun.fish.biomass, corr = "lingoes")
 
 saveRDS(functional.diversity.FT, file = "FunctionalDiv.rds")
 
@@ -109,115 +128,149 @@ FEve.Depth.Year <-FEve.comm.depth %>%
 
 #Abundance over time, sd by FEve----
 
-#Abundance per community by year
-Abun.fish.SD <-fish.abun.complete %>%
-  #what is the SD of the biomass 
-  group_by(stratum, year_surv)%>%
-  dplyr::summarize(group_SD = weighted.sd(final_biomass,weight)) %>%
-  #log transform this to have a less scew?
-  group_by(stratum, year_surv)%>%
-  dplyr::mutate(log_SD = log(group_SD)) %>%
-  #Need to take 1/SD so then plot with the FD 
-  group_by(stratum, year_surv)%>%
-  dplyr::mutate(one.group_SD = 1/(group_SD)) %>%
-  #log of the 1/sd
-  group_by(stratum, year_surv)%>%
-  dplyr::mutate(log.one.group_SD = log(one.group_SD)) 
- 
- 
- 
-##sd plot----
-Abun.fish.SD <- Abun.fish.SD %>% dplyr::rename(year = year_surv)
-Abun.fish.FEve <- merge (x = FEve.comm, y = Abun.fish.SD)
-Abun.fish.FEve$year <- as.factor(Abun.fish.FEve$year)
+##Bins for 5 year biomass table and FEve table----
+tags <- c("1995-1999","2000-2004","2005-2009","2010-2014","2015-2017")
 
-plot.logSD <- Abun.fish.FEve %>%
-  filter (year %in% c(1995,2000,2005,2010,2015,2017)) %>%
-  ggplot(aes(x= V1, y= log.one.group_SD))+
+abun.bin <-Abun.fish.strata %>%
+  mutate(new_bin = case_when(
+    year_surv <=1999 ~ tags[1],
+    year_surv >1999 & year_surv <2005 ~ tags[2],
+    year_surv >=2005 & year_surv <2010 ~ tags[3],
+    year_surv >=2010 & year_surv <2015 ~ tags[4],
+    year_surv >=2015 & year_surv <=2017 ~ tags[5]))
+
+
+FEve.bin <-FEve.comm %>%
+  mutate(new_bin = case_when(
+    year <=1999 ~ tags[1],
+    year >1999 & year <2005 ~ tags[2],
+    year >=2005 & year <2010 ~ tags[3],
+    year >=2010 & year <2015 ~ tags[4],
+    year >=2015 & year <=2017 ~ tags[5]))
+
+
+##Abundance mean and sd of biomass per bin----
+abun.bin.mean <-abun.bin %>%
+  #mean biomass for the binned years
+  group_by(stratum, new_bin)%>%
+  dplyr::summarize(bin_mean_biomass = mean(group_biomass))
+
+abun.bin.sd <-abun.bin %>%
+  #sd of the binned years
+  group_by(stratum, new_bin)%>%
+  dplyr::summarise(bin_sd_biomass = sd(group_biomass))
+  
+abun.bin.biomass <- merge(abun.bin.mean, abun.bin.sd) 
+
+##FEve mean and sd per bin----
+FEve.bin.mean <-FEve.bin %>%
+  #mean biomass for the binned years
+  group_by(stratum, new_bin)%>%
+  dplyr::summarize(bin_mean_FEve = mean(V1))
+
+FEve.bin.sd <-FEve.bin %>%
+  #sd of the binned years
+  group_by(stratum, new_bin)%>%
+  dplyr::summarise(bin_sd_FEve = sd(V1))
+
+FEve.bin.FD <- merge(FEve.bin.mean,FEve.bin.sd)
+
+abun.feve.bin <- merge ( FEve.bin.FD,  abun.bin.biomass)
+abun.feve.bin$new_bin <- as.factor(abun.feve.bin$new_bin)
+abun.feve.bin$stratum <- as.factor(abun.feve.bin$stratum)
+
+
+#Need to figure out how to select the first and last year in every bin 
+FEve.lag <-FEve.bin %>%
+  #sd of the binned years
+  filter(year %in% c(1995,2000,2005,2010,2015))
+ 
+##sd plot logSDbiomass----
+plot.logSDbiomass <- abun.feve.bin %>%
+  ggplot(aes(x= bin_sd_FEve, y= log(bin_sd_biomass)))+
   labs(title = "Temporal varation in biomass for NFL as a response to community functional evenness") +
-  xlab ("Functional Evenness") +
-  ylab ("Log(SD(biomass)^-1)")+
+  xlab ("Functional Evenness [sd(FEve)]") +
+  ylab ("log(sd(biomass))")+
   geom_point()+
-  geom_smooth(method = lm, aes(color = year))
-  #ylim(0,2000)
-  #facet_wrap(~year)
+  geom_smooth(method = lm, aes(color = new_bin))
+  
+ggsave("Biomass stability (sd) with FEve (sd).png", plot.logSDbiomass, width =  10, height = 10)
+
+##Mean FEve plot with logsd Biomass ----
+plot.meanfeve <- abun.feve.bin %>%
+  filter(stratum %in% c(201:230))%>%
+  ggplot(aes(x= bin_mean_FEve, y= log(bin_sd_biomass)))+
+  labs(title = "Temporal varation in biomass for NFL as a response to community functional evenness") +
+  xlab ("Mean Functional Evenness") +
+  ylab ("log(sd(biomass))")+
+  geom_point(aes(color = new_bin))+
+  geom_path()+
+  theme()+
+  facet_wrap(~stratum)
+
+ggsave("Biomass stability (sd) with FEve (mean).png", plot.meanfeve, width =  10, height = 10)
+
 
 #Rate of biomass change ----
 
-Abun.fish.rate <-Abun.fish %>%
-  #what is the rate of change of biomass in a strata from year1-yearn
-  #Rate of biomass change from one year to another for the entire biomass
-  group_by(stratum, year_surv)%>%
-  dplyr::summarize(total_group_biomass = sum(group_biomass))%>%
+#what is the rate of change of biomass in a strata from year1-yearn
+Abun.fish.rate <- abun.feve.bin %>%  
   group_by(stratum)%>%
   #because we don't have individual taxa we can;t look at sd
-  arrange(stratum, year_surv)%>%
-  dplyr::mutate(rate.change = log(total_group_biomass / lag(total_group_biomass))) 
+  arrange(stratum, new_bin)%>%
+  dplyr::mutate(rate.change = log(bin_mean_biomass / lag(bin_mean_biomass))) 
 
+#this could be used for the rate of compositional change but no with the current state of summed biomass accross the strata
 #Abun.fish.rate.SD <-Abun.fish.rate %>%
-  #group_by(stratum,year_surv)%>%
-  #dplyr:: summarise(sd2.rate.change = (sd(rate.change, na.rm = TRUE))^2)
+#  group_by(stratum,year_surv)%>%
+#  dplyr:: summarise(sd2.rate.change = (weighted.sd(rate.change, weight, na.rm = TRUE))^2)
 
-#Trying by hand/fail  
-#Sum of the rate of change, if 1 NA is present it is summing to NA  
-#Abund.fish.mean.rate <-Abun.fish.rate%>% 
-  ##dplyr::mutate (mean.rate.change.strata.year = mean(rate.change, na.rm = TRUE)) %>%
- # group_by(stratum, year_surv) %>%
-  #dplyr::summarise(sum.rate.change.strata.year = sum(rate.change, na.rm = TRUE)) %>%
- # ungroup ()
 
 ##Rate of change plot----
 
-Abun.fish.rate <- Abun.fish.rate %>% dplyr::rename(year = year_surv)
-Abun.fish.rate.FEve <- merge (x = FEve.comm, y = Abun.fish.rate)
-Abun.fish.rate.FEve$year <- as.factor(Abun.fish.rate.FEve$year)
-Abun.fish.rate.FEve$stratum <- as.factor(Abun.fish.rate.FEve$stratum)
-
-plot.SDratechange <- Abun.fish.rate.FEve %>%
-  #filter (stratum %in% c(201:210)) %>%
-  filter (year %in% c(1996,2000,2005,2010,2015,2017)) %>%
-  ggplot(aes(x= V1, y= rate.change))+
+plot.ratechange <- Abun.fish.rate %>%
+  ggplot(aes(x= bin_mean_FEve, y= rate.change))+
   labs(title = "Temporal varation in biomass for NFL as a response to community functional evenness") +
   xlab ("Functional Evenness") +
   ylab ("Rate of biomass change")+
   geom_point()+
-  geom_smooth(method = lm)+
-  theme_light()+
-  #facet_wrap(~year)+
-  theme(legend.position = 'none')
+  geom_smooth(method = lm, aes(color = new_bin))+
+  theme_light()
 
+plot.ratechange
 
-plot.SDratechange
 #ylim(0,2000)
 #facet_wrap(~year)
 
 ##Model rate of biomass change----
 
 ###Trying with lm models, checking residuals----
-#have to scale the variables as they have different scales
-Abun.fish.rate.FEve$Z_V1 <- scale(Abun.fish.rate.SD.FEve$V1)
-Abun.fish.rate.FEve$Z_sd2 <- scale(Abun.fish.rate.SD.FEve$sd2.rate.change )
-
 #too many rows with NAs to model
-rate.feve.noNA<-Abun.fish.rate.SD.FEve[complete.cases(Abun.fish.rate.SD.FEve),]
+abun.feve.bin.noNA<-abun.feve.bin[complete.cases(abun.feve.bin),]
+
+#have to scale the variables as they have different scales
+abun.feve.bin.noNA$Z_FEve <- scale(abun.feve.bin.noNA$bin_mean_FEve)
+abun.feve.bin.noNA$Z_sdbio <- scale(abun.feve.bin.noNA$bin_sd_biomass)
+
+
 
 #Trying data out in a linear model
-lm.test<-lm(Z_sd2 ~ Z_V1, data=rate.feve.noNA)
+lm.test<-lm(Z_sdbio ~ Z_FEve, data=abun.feve.bin.noNA)
 lm.test.resid <- rstandard(lm.test)
 
 #testing model residuals against the random factors to determine if they need to be included
-plot(lm.test.resid ~ as.factor(rate.feve.noNA$stratum),
+plot(lm.test.resid ~ as.factor(abun.feve.bin.noNA$stratum),
      xlab = "Stratum", ylab = "Standardized residuals")
 abline(0, 0, lty = 2)
 
-plot(lm.test.resid ~ as.factor(rate.feve.noNA$year),
+plot(lm.test.resid ~ as.factor(abun.feve.bin.noNA$new_bin),
      xlab = "Year", ylab = "Standardized residuals")
 abline(0, 0, lty = 2)
 #there is a lot of variation around the means, this indicates that these factors should be included
 
-###Lets try with glm
-glm1 <- glmer(sd2.rate.change ~ V1 + (1|stratum) + (1|year),
-     data=rate.feve.noNA, family = gaussian(link = "log"))
+###Lets try with glm #WHY YOU NO WORK
+glm1 <- glmer(Z_sdbio ~ Z_FEve + (1|stratum) + (1|new_bin),
+     data=abun.feve.bin.noNA, family = gaussian(link = "log"), start = 0)
 
 source(file = "functions/glmm_funs.R")
 
@@ -247,38 +300,74 @@ ggplot()+
   geom_ribbon(data = effects.V1, aes (x= V1, ymin= lower, ymax= upper), alpha= 0.3, fill = "red")+
   facet_wrap(~stratum)
 
-##Trying gams time
+##Trying gams time ----
 library(mgcv)
 
-gam2 <- gam(sd2.rate.change ~ V1 ,
-            data=rate.feve.noNA)
+#gam1 will used the scaled variables with the NA's removed from the data
+gam1 <- gam(Z_sdbio ~ s(Z_FEve) ,
+            data=abun.feve.bin.noNA, method = 'REML')
 summary(gam1)
+gam.check(gam1)
 
-data_plot <- ggplot(data = rate.feve.noNA, aes(y = sd2.rate.change, x = V1)) + 
+data_plotgam1 <- ggplot(data = abun.feve.bin.noNA, aes(y = Z_sdbio, x = Z_FEve)) + 
   geom_point() +
   geom_line(aes(y = fitted(gam1)),
             colour = "red", size = 1.2) + 
-  geom_line(aes(y = fitted(gam2)),
-            colour = "blue", size = 1.2)+
+  #geom_line(aes(y = fitted(gam2)),
+   #         colour = "blue", size = 1.2)+
   theme_bw()
-data_plot
-plot(gam1)
+data_plotgam1
 
-AIC(gam1, gam2)
-#Effective species vs FEve----
-effective.species <- effective.species %>% rename(year = year_surv)
-effective.species.FEve <- merge (x = FEve.comm, y = effective.species)
+#gam2 is using the data unscaled but with a log of the dependant varable to visualize it better
+gam2 <- gam(log(bin_sd_biomass) ~ s(bin_mean_FEve) ,
+            data=abun.feve.bin.noNA, method = 'REML')
+summary(gam2)
 
-##Effective species/FEve plot----
+data_plotgam2 <- ggplot(data = abun.feve.bin.noNA, aes(y = log(bin_sd_biomass), x = bin_mean_FEve)) + 
+  geom_point() +
+  geom_line(aes(y = fitted(gam2)),
+            colour = "red", size = 1.2) + 
+  #geom_line(aes(y = fitted(gam2)),
+  #         colour = "blue", size = 1.2)+
+  theme_bw()
+data_plotgam2
+#By loging the dependent varable I achieve two 'normal' distributions for my data. this gives a linear regression. Would I go back to lmms instead?
 
-plot.effective.FEve <- effective.species.FEve %>%
-  filter (year %in% c(1995,2000,2005,2010,2015,2017)) %>%
-  ggplot(aes(x= effective_species, y= V1))+
-  labs(title = "Relationship between FEve and Effective species") +
-  xlab ("Effective species") +
-  ylab ("Functional Evenness)")+
-  geom_point()+
-  geom_smooth(method = lm, aes(color = year))
-#ylim(0,2000)
+gam3 <- gam(bin_sd_biomass ~ s(bin_mean_FEve) ,
+            data=abun.feve.bin.noNA, method = 'REML')
+summary(gam3)
+#no different than the scaled version
+data_plotgam3 <- ggplot(data = abun.feve.bin.noNA, aes(y = bin_sd_biomass, x = bin_mean_FEve)) + 
+  geom_point() +
+  geom_line(aes(y = fitted(gam3)),
+            colour = "red", size = 1.2) + 
+  #geom_line(aes(y = fitted(gam2)),
+  #         colour = "blue", size = 1.2)+
+  theme_bw()
+data_plotgam3
+
+AIC(gam1, gam2, gam3, gamm1)
+#visually gam1 and gam3 look very similar but with the AIC gam 1 comes out as the most predictive. Still there isnt a great fit to the data. I think this will need the mixed model or a higher k -> changing K din't work 
 
 
+#GAMM ----
+gamm1 <- gam(Z_sdbio ~ s(Z_FEve) + 
+               s(stratum, bs= "re") ,
+            data=abun.feve.bin.noNA, method = 'REML')
+
+gamm1_summary <-summary(gamm1)
+
+gamm2 <- gam(log(bin_sd_biomass) ~ bin_mean_FEve +
+               s(stratum, bs= "re")+
+               new_bin,
+            data=abun.feve.bin.noNA, method = 'REML')
+summary(gamm2)
+
+data_plotgamm2 <- ggplot(data = abun.feve.bin.noNA, aes(y = log(bin_sd_biomass), x = bin_mean_FEve)) + 
+  geom_point() +
+  geom_line(aes(y = fitted(gamm2)),
+            colour = "red", size = 1.2) + 
+  #geom_line(aes(y = fitted(gam2)),
+  #         colour = "blue", size = 1.2)+
+  theme_bw()
+data_plotgamm2
