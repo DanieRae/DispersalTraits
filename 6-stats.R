@@ -6,6 +6,18 @@ library(gridExtra)
 library(lme4)
 library(sjPlot)
 library(FD)
+library(sf)
+library(ggplot2)
+library(ggforce)
+library(patchwork)
+library(dplyr)
+library(stringr)
+library(rgdal)
+library(rgeos)
+library(proj4)
+library(spdep)
+library(mgcv)
+library(viridis)
 
 #NOTES ----
 #With the clustering of the species here a a few responses that should be looked at#
@@ -301,7 +313,6 @@ ggplot()+
   facet_wrap(~stratum)
 
 ##Trying gams time ----
-library(mgcv)
 
 #gam1 will used the scaled variables with the NA's removed from the data
 gam1 <- gam(Z_sdbio ~ s(Z_FEve) ,
@@ -371,3 +382,105 @@ data_plotgamm2 <- ggplot(data = abun.feve.bin.noNA, aes(y = log(bin_sd_biomass),
   #         colour = "blue", size = 1.2)+
   theme_bw()
 data_plotgamm2
+
+
+#MRF----
+# stratum.shpfile <- st_read("all_strata.shp") %>% 
+#   # Validating geometries to make operations on them 
+#   st_make_valid() %>%  
+#   dplyr::mutate(stratum_id_base = str_sub(stratum, 1, 3)) %>% 
+#   group_by(stratum_id_base) %>% 
+#   dplyr::summarise(geometry = st_union(geometry))%>%
+#   dplyr::rename(stratum = stratum_id_base)
+
+##### Depth Data ####
+# Created depth data to be added to the shapefile
+# {
+#   strata.depth <- as.data.frame(stratum.shpfile$stratum)
+#   strata.depth$depth <- seq(1, 345, 1)
+#   colnames(strata.depth) <- c("stratum", "depth")
+# }
+
+##### Combine Data ####
+stratum.shpfile.abun <- merge(stratum.shpfile, abun.feve.bin.noNA,by = "stratum" )
+# 
+# class(stratum.shpfile)
+
+##### SpatialPolygonsDataFrame ####
+shp <- as(stratum.shpfile.abun, 'Spatial')
+
+# Create dataframe from data layer in shapefile 
+df <- droplevels(as(shp, 'data.frame'))
+
+## project data
+utm.proj <- "+proj=utm +zone=20 +south ellps=WGS84 +datum=WGS84"
+shp <- spTransform(shp, CRS(utm.proj))  
+shpf <- fortify(shp, region = "stratum")
+
+#Make sure stratum is set to factor or else!
+df$stratum <- as.factor(df$stratum)
+
+#Create neighbours list
+nb <- poly2nb(shp, row.names = df$stratum)
+names(nb) <- attr(nb, "region.id")
+str(nb[1:6]) 
+
+#Test using mgcv example
+ctrl <- gam.control(nthreads = 6) 
+
+b <-
+  gam(
+    log(bin_sd_biomass) ~ s(stratum, bs = "mrf", xt = list(nb = nb)),
+    data = abun.feve.bin.noNA,
+    method = "REML",
+    control = ctrl,
+    family = gaussian()
+  )
+
+plot(b, scheme = 1)
+
+
+#Fonyas example using gavin simpsons tutorial
+ctrl <- gam.control(nthreads = 6) # use 6 parallel threads, reduce if fewer physical CPU cores
+m1 <- gam(depth ~ s(stratum, bs = 'mrf', xt = list(nb = nb)), # define MRF smooth
+          data = df,
+          method = 'REML', # fast version of REML smoothness selection
+          control = ctrl,
+          family = gaussian()) # fit gaussian
+
+
+df <- transform(df,
+                mrfFull= predict(m1, type = 'response'))
+
+## merge data with fortified shapefile
+mdata <- left_join(shpf, df, by = c('id' = 'stratum'))
+
+theme_map <- function(...) {
+  theme_minimal() +
+    theme(...,
+          axis.line = element_blank(),
+          axis.text.x = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          panel.border = element_blank())
+}
+
+myTheme <- theme_map(legend.position = 'bottom')
+myScale <- scale_fill_viridis(name = '%', option = 'plasma',
+                              limits = c(1, 345),
+                              labels = function(x) x,
+                              guide = guide_colorbar(direction = "horizontal",
+                                                     barheight = unit(2, units = "mm"),
+                                                     barwidth = unit(75, units = "mm"),
+                                                     title.position = 'left',
+                                                     title.hjust = 0.5,
+                                                     label.hjust = 0.5))
+myLabs <- labs(x = NULL, y = NULL, title = 'Strata MRF')
+
+ggplot(mdata, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = mrfFull)) +
+  geom_path(col = 'black', alpha = 0.5, size = 0.1) +
+  coord_equal() +
+  myTheme + myScale + myLabs

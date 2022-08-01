@@ -17,7 +17,7 @@ library(stringr)
   #dplyr::summarize(depth = mean(depth))
 
 # read all files of the shapefile
-stratum.shpfile <- st_read("strata/all_strata.shp") %>% 
+stratum.shpfile <- st_read("strata") %>% 
   # Validating geometries to make operations on them 
   st_make_valid() %>%  
   dplyr::mutate(stratum_id_base = str_sub(stratum, 1, 3)) %>% 
@@ -40,7 +40,7 @@ stratum.shpfile <- st_read("strata/all_strata.shp") %>%
 
 plot(stratum.shpfile$geometry)
 
-stratum.shpfile <- merge(x =stratum.shpfile, y=strata.depth,by = "stratum" )
+#stratum.shpfile <- merge(x =stratum.shpfile, y=strata.depth,by = "stratum" )
 
 ##Lets add the cluster IDs to the abundance data. Seems like it could be useful 
 
