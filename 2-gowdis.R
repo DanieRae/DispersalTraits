@@ -13,7 +13,7 @@ fish.traits.40Nas.columns <- names(fish.traits.NAs[fish.traits.NAs <= 40])
 fish.traits.40NA <- fish.traits[, fish.traits.40Nas.columns]
 
 ##Skimming data for structure----
-skim <- skim(fish.traits.40NA)
+skim.40 <- skim(fish.traits.40NA)
 
 
 # Identify which columns have less than 60 NAs
