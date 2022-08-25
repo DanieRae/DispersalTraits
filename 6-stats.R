@@ -350,8 +350,8 @@ sjPlot::plot_model(glm1)
 effects.V1 <- effect(term = "V1", mod = glm1)
 effects.V1 <- as.data.frame(effects.V1)
 
-rate.feve.noNA.fit <-
-  filter(rate.feve.noNA, stratum %in% c(201:202))
+abun.feve.bin.noNA.fit <-
+  filter(abun.feve.bin.noNA, stratum %in% c(201:202))
 
 
 ggplot() +
@@ -397,7 +397,10 @@ data_plotgam2 <-
             colour = "red", size = 1.2) +
   #geom_line(aes(y = fitted(gam2)),
   #         colour = "blue", size = 1.2)+
-  theme_bw()
+  theme_bw()+
+  labs(title = "Marine Community Stability in Response to Dispersal Diversity") +
+  xlab("Dispersal Diversity (Functional Evenness)")+
+  ylab ("Stability (SD of Biomass) ")
 
 data_plotgam2
 #By loging the dependent varable I achieve two 'normal' distributions for my data. this gives a linear regression. Would I go back to lmms instead?
@@ -441,7 +444,7 @@ summary(gamm2)
 data_plotgamm2 <-
   ggplot(data = abun.feve.bin.noNA, aes(y = log(bin_sd_biomass), x = bin_mean_FEve)) +
   geom_point() +
-  geom_line(aes(y = fitted(gamm1)),
+  geom_line(aes(y = fitted(gamm2)),
             colour = "red", size = 1.2) +
   #geom_line(aes(y = fitted(gam2)),
   #         colour = "blue", size = 1.2)+
@@ -458,7 +461,7 @@ data_plotgamm2
 # class(stratum.shpfile)
 
 ##### SpatialPolygonsDataFrame ####
-shp <- as(stratum.shpfile, 'Spatial')
+shp <- as(stratum.shpfile.adjusted, 'Spatial')
 class(shp)
 
 # Create dataframe from data layer in shapefile

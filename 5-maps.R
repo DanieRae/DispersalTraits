@@ -13,7 +13,13 @@ library(stringr)
 # read all files of the shapefile
 
 
-stratum.shpfile.adjusted <- st_read("strata_adjusted") 
+stratum.shpfile <- st_read("strata") %>%
+  # Validating geometries to make operations on them
+  st_make_valid() %>%
+  dplyr::mutate(stratum_id_base = str_sub(stratum, 1, 3)) %>%
+  group_by(stratum_id_base) %>%
+  dplyr::summarise(geometry = st_union(geometry)) %>%
+  dplyr::rename(stratum = stratum_id_base)
 
 stratum.shpfile.adjusted <- st_read("strata_adjusted")%>%
   # Validating geometries to make operations on them
@@ -25,6 +31,8 @@ stratum.shpfile.adjusted <- st_read("strata_adjusted")%>%
 
 #take a look at the geometry
 plot(stratum.shpfile$geometry)
+
+plot(stratum.shpfile.adjusted$geometry)
 
 #Strata depth - need to record from poster in the lab
 
@@ -424,3 +432,4 @@ map4 <- FEve.comm.depth %>%
   scale_fill_viridis_c () +
   theme_light() +
   facet_wrap( ~ year)
+
