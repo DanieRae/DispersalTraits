@@ -62,7 +62,7 @@ beta.div.j <- lapply(fish.pa.pivot.mat, function(mat) {
 
 #Function diversity measures --------
 
-Identity <- functcomp(fish.traits.40NA, Abun.fish.biomass)
+#Identity <- functcomp(fish.traits.40NA, Abun.fish.biomass)
 
 # functional.diversity.FT <- dbFD(fish.traits.40NA, Abun.fish.biomass, corr = "lingoes")
 
@@ -455,10 +455,10 @@ data_plotgamm2
 #MRF----
 
 ##### Combine Data ####
-# stratum.shpfile is located on page 5 line 14
-# stratum.shpfile.abun <-
-#   merge(stratum.shpfile, abun.feve.bin.noNA, by = "stratum")
-# class(stratum.shpfile)
+# stratum.shpfile is located on page 5 line 14 THIS ALSO REMOVES MISSING STRATA
+stratum.shpfile.abun <-
+ merge(stratum.shpfile, abun.feve.bin.noNA, by = "stratum")
+
 
 ##### SpatialPolygonsDataFrame ####
 shp <- as(stratum.shpfile.adjusted, 'Spatial')

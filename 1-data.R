@@ -175,3 +175,4 @@ fish.abun.complete <- fish.abun.clean.complete %>%
   mutate(final_biomass = ifelse(is.na(group_biomass), min_biomass, group_biomass)) %>%
   mutate(weight = ifelse(is.na(group_biomass), 0, 1)) %>%
   select(-c("group_biomass", "min_biomass"))
+

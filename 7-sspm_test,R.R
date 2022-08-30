@@ -11,6 +11,18 @@ plot <-stratum.shpfile.abun %>%
   geom_sf() + 
   geom_sf(data = stratum_points)
 
+#Need to take this sf file and pull just the data without the geometries, we are using this rather than the "abun.feve.bin.noNA" data table because this table has more strata than we have shpfiles for.
+
+stratum.abun <- as.data.frame(stratum.shpfile.abun)
+
+stratum.abun<- select(stratum.abun, -c("geometry"))
+
+stratum.shpfile.geom <- select(stratum.shpfile.abun, c("stratum", "geometry"))%>%
+  sf::st_as_sf()
+
+stratum.shpfile.geom <- distinct(stratum.shpfile.geom) %>%
+  sf::st_as_sf()
+
 # The package needs to know the boundaries of all the polygons, but because of all
 # the gaps we have to take convex hull and buffer
 stratum.shpfile.abun.combined <- st_convex_hull(stratum.shpfile.abun) %>% 
@@ -21,7 +33,7 @@ stratum.shpfile.abun.combined <- st_convex_hull(stratum.shpfile.abun) %>%
 
 # Take the data, join them to the new points, 
 # then create two columns, for Unique ID and for time
-abun.feve.bin.noNA.spatial <- abun.feve.bin.noNA %>% 
+stratum.abun.spatial <- stratum.abun %>% 
   left_join(stratum_points) %>% 
   st_as_sf() %>% 
   mutate(uniqueID = paste0(stratum, new_bin), 
@@ -30,7 +42,7 @@ abun.feve.bin.noNA.spatial <- abun.feve.bin.noNA %>%
 
 # Use sspm
 # we create the dataset object
-dataset <- spm_as_dataset(data = abun.feve.bin.noNA.spatial, 
+dataset <- spm_as_dataset(data = stratum.abun.spatial, 
                           name = "abundance_model",
                           time = "year_basis", 
                           uniqueID = "uniqueID")
@@ -38,7 +50,7 @@ dataset <- spm_as_dataset(data = abun.feve.bin.noNA.spatial,
 # We create the boundary object
 bound <- spm_as_boundary(stratum.shpfile.abun.combined, 
                          boundary = "stratum", 
-                         patches = select(stratum.shpfile.adjusted, 
+                         patches = select(stratum.shpfile, 
                                           "stratum"), points = NULL)
  
 
@@ -47,10 +59,26 @@ bound <- spm_as_boundary(stratum.shpfile.abun.combined,
 #              boundaries = bound, 
 #              family = tw)
 
+# helper function 
+stratum_mrf <- sspm:::ICAR(data_frame = dataset@data, boundaries = dataset@boundaries, dimension = "space", time = dataset@time, k=10, bs = "mrf", xt = NULL )
+
+stratum_mrf_pen <-sspm:::ICAR_space(patches = stratum.shpfile.geom, space = "stratum")
+
+
+#Exploring gams with eric 
+gam_test <- 
+  gam(
+    log(bin_sd_biomass) ~ bin_mean_FEve + new_bin + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen)),
+    data = stratum.abun,
+    method = "REML",
+    family = gaussian()
+  )
+
+
 dataset_smoothed <- dataset %>%  
-  spm_smooth(bin_sd_biomass ~ smooth_space(bs = "mrf"),
+  spm_smooth(bin_sd_biomass ~ bin_mean_FEve + smooth_space(bs = "mrf"),
              boundaries = bound, 
-             family = tw)
+             family = Gamma(link="log"))
 
 fit <- spm_smoothed_fit(dataset_smoothed)[[1]]
 View(fit$smooth)
@@ -67,3 +95,7 @@ dataset_smoothed_plot <-
   labs(title = "Marine Community Stability in Response to Dispersal Diversity") +
   xlab("Dispersal Diversity")+
   ylab ("Biomass")
+
+veca <- unique(sort(stratum.shpfile.geom$stratum))
+vecb <- unique(sort(abun.feve.bin.noNA$stratum))
+vecc <- unique(sort(stratum.abun$stratum))
