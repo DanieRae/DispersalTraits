@@ -1,8 +1,13 @@
-# PCOA two function produce similar plots, cmdscale has open circles and pcoa uses the species names
+#DATA REQUIRED FROM PAGE 2#
+#PRODUCES THE PCOA PLOTS FOR TRAIT SPACE VISUALIZATION ---- NOT USED FOR ANOTHER PAGE#
+
+#NOTE PCOA two function produce similar plots, cmdscale has open circles and pcoa uses the species names#
+
+#LIBRARIES ----
+library(ggbiplot)
+library(ggplot2)
 
 # CMDSCALE pcoa method with ggplot####
-
-
 fish.cmd <-
   cmdscale(fish.traits.40NA.dist,
            eig = TRUE,
@@ -16,12 +21,13 @@ fish.cmd.values <- fish.cmd$points
 fish.cmd.data <- data.frame(Sample = rownames(fish.cmd.values),
                             X = fish.cmd.values [, 1],
                             Y = fish.cmd.values [, 2])
-fish.cmd.data$clusterID <- fish.traits.40NA.clust$clusterID
+fish.cmd.data$clusterID <- fish.traits.40NA.clust5$clusterID
 
 #PCoA plot 1 ----
-plot1 <-
-  ggplot(data = fish.cmd.data, aes (x = X, y = Y)) +
+PCOA.plot.5GR <-
+  ggplot(data = fish.cmd.data, aes (x = X, y = Y, color = clusterID)) +
   geom_point(size = 2) +
+  stat_ellipse()+
   theme_bw() +
   xlab(paste("PCoA 1: ", fish.cdm.eig[1], "%", sep = "")) +
   ylab(paste("PCoA 2: ", fish.cdm.eig[2], "%", sep = "")) +
@@ -29,6 +35,14 @@ plot1 <-
   theme(legend.position = "none", asp = 1)
 
 
+PCOA.plot<-
+  ggplot(data = fish.cmd.data, aes (x = X, y = Y)) +
+  geom_point(size = 2) +
+  theme_bw() +
+  xlab(paste("PCoA 1: ", fish.cdm.eig[1], "%", sep = "")) +
+  ylab(paste("PCoA 2: ", fish.cdm.eig[2], "%", sep = "")) +
+  ggtitle("PCoA Marine fish dispersal") +
+  theme(legend.position = "none", asp = 1)
 # Code taken from ape::biplot.pcoa
 get_U_matrix <- function(Y,
                          Eig,
@@ -80,7 +94,7 @@ new_var_name <-
 
 U$var_name <- new_var_name
 
-plot1 + geom_segment(
+PCOA.plot + geom_segment(
   data = U,
   aes(x = 0,
       xend = x,

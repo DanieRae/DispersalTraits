@@ -1,10 +1,14 @@
 ### Make SSPM model
 library(sspm)
 
+stratum.shpfile.abun <-
+  merge(stratum.shpfile, abun.feve.bin.noNA, by = "stratum")
+
 # The package needs to think we are using points, so we make some
 stratum_points <- stratum.shpfile.abun %>% 
   st_point_on_surface() %>% 
   select(stratum, new_bin)
+
 
 plot <-stratum.shpfile.abun %>% 
   ggplot() + 
@@ -59,43 +63,47 @@ bound <- spm_as_boundary(stratum.shpfile.abun.combined,
 #              boundaries = bound, 
 #              family = tw)
 
-# helper function 
-stratum_mrf <- sspm:::ICAR(data_frame = dataset@data, boundaries = dataset@boundaries, dimension = "space", time = dataset@time, k=10, bs = "mrf", xt = NULL )
 
-stratum_mrf_pen <-sspm:::ICAR_space(patches = stratum.shpfile.geom, space = "stratum")
-
-
-#Exploring gams with eric 
-gam_test <- 
-  gam(
-    log(bin_sd_biomass) ~ bin_mean_FEve + new_bin + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen)),
-    data = stratum.abun,
-    method = "REML",
-    family = gaussian()
-  )
-
-
+#Val written model with spm, using predctor variable that is not easily accepted by spm 
 dataset_smoothed <- dataset %>%  
   spm_smooth(bin_sd_biomass ~ bin_mean_FEve + smooth_space(bs = "mrf"),
              boundaries = bound, 
-             family = Gamma(link="log"))
+             family = Gamma(link="log"),
+             predict = FALSE)
 
 fit <- spm_smoothed_fit(dataset_smoothed)[[1]]
 View(fit$smooth)
 
 View(fit$smooth[[1]][["xt"]][["penalty"]])
 
+# helper function 
+stratum_mrf <- sspm:::ICAR(data_frame = dataset@data, boundaries = bound, dimension = "space", time = dataset@time, k=10, bs = "mrf", xt = NULL )
 
+#penalty
+stratum_mrf_pen <-sspm:::ICAR_space(patches = stratum.shpfile.geom, space = "stratum")
+
+stratum.abun.mut <- stratum.abun %>%
+  mutate(stratum = as.factor(stratum))
+
+#Exploring gams with eric ---- 
+gam_test <- 
+  gam(
+    log(bin_sd_biomass) ~ bin_mean_FEve + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 6),
+    data = stratum.abun.mut,
+    method = "REML",
+    family = gaussian()
+  )
+
+gam.check(gam_test, rep = 500)
+##PLOT ----
 dataset_smoothed_plot <-
-  ggplot(data = abun.feve.bin.noNA.spatial, aes(y = log(bin_sd_biomass), x = bin_mean_FEve)) +
+  ggplot(data = stratum.abun.mut, aes(y = log(bin_sd_biomass), x = bin_mean_FEve)) +
   geom_point() +
-  geom_line(aes(y = fitted(fit)),
+  geom_line(aes(y = fitted(gam_test)),
             colour = "red", size = 1.2) +
   theme_bw()+
   labs(title = "Marine Community Stability in Response to Dispersal Diversity") +
   xlab("Dispersal Diversity")+
   ylab ("Biomass")
 
-veca <- unique(sort(stratum.shpfile.geom$stratum))
-vecb <- unique(sort(abun.feve.bin.noNA$stratum))
-vecc <- unique(sort(stratum.abun$stratum))
+dataset_smoothed_plot

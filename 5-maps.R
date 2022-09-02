@@ -1,4 +1,6 @@
-# PACKAGES ----
+#DATA FROM PAGE 2 AND PAGE 3#
+#THIS PAGE RUNS ALL THE DIFFERENT MAPS USED TO VISUALIZE SPATIOTEMPOTAL PATTERNS#
+# LIBRARIES ----
 library(sf)
 library(ggplot2)
 library(ggforce)
@@ -7,13 +9,12 @@ library(dplyr)
 library(stringr)
 #library(tmap)
 
-# Import the strata data ------
+# STRATUM SHAPEFILE ------
 
 #strata geometry, this joins the multiple polygons
 # read all files of the shapefile
-
-
 stratum.shpfile <- st_read("strata") %>%
+  filter(DIV != "2H", DIV != "2G") %>%
   # Validating geometries to make operations on them
   st_make_valid() %>%
   dplyr::mutate(stratum_id_base = str_sub(stratum, 1, 3)) %>%
@@ -21,7 +22,7 @@ stratum.shpfile <- st_read("strata") %>%
   dplyr::summarise(geometry = st_union(geometry)) %>%
   dplyr::rename(stratum = stratum_id_base)
 
-stratum.shpfile.adjusted <- st_read("strata_adjusted")%>%
+stratum.shpfile.adjusted <- st_read("strata_adjusted") %>%
   # Validating geometries to make operations on them
   st_make_valid() %>%
   dplyr::mutate(stratum_id_base = str_sub(stratum, 1, 3)) %>%
@@ -34,67 +35,48 @@ plot(stratum.shpfile$geometry)
 
 plot(stratum.shpfile.adjusted$geometry)
 
-#Strata depth - need to record from poster in the lab
-
-##Lets add the cluster IDs to the abundance data. Seems like it could be useful
-
-clust.ID <- select (fish.traits.40NA.clust, c ("clusterID"))
-clust.ID$taxa_name <- row.names(clust.ID)
-
-fish.abun.clust <-
-  merge(x = fish.abun.clean,
-        y = clust.ID,
-        by = "taxa_name",
-        all.x = TRUE)
-
-#keep only the columns of  interest
-
-fish.abun.clustCL <-
-  select(
-    fish.abun.clust,
-    -c (
-      "year_obs",
-      "season",
-      "vessel",
-      "distance_km",
-      "area_swept_km2"
-    )
-  )
-
-# group by year and stratum #
-
-fish.abun.gr <- fish.abun.clustCL %>%
-  group_by(stratum, year_surv) %>%
-  dplyr::summarise(Unique_FE = n_distinct(clusterID))
-
-#join stratum table and unique FE table
-#first I need to filter teh data because I don't have the infor for all stratum
-
-stratum.FE <-
-  merge(x = fish.abun.gr,
-        y = stratum.shpfile,
-        by = "stratum",
-        all.y = TRUE) %>%
-  sf::st_as_sf()
+#NULL - STRATUM DEPTH- need to record from poster in the lab ----
 
 # stratum.FE.depth <-
 #   merge (x = stratum.FE, y = strata.depth, by = "stratum") %>%
 #   sf::st_as_sf()
 
-#MAP TESTS ----
-# map.test <- stratum.FE.depth %>%
+# map.depth <- stratum.FE.depth %>%
 #   ggplot() +
 #   geom_sf(aes(fill = depth)) +
 #   scale_fill_gradient(low = 'white', high = "purple")
 
-map1 <- stratum.FE %>%
+# MAP
+# map4 <- FEve.comm.depth %>%
+#   filter(year %in% c(1995, 2000, 2005, 2010)) %>%
+#   ggplot() +
+#   geom_sf(aes(fill = V1)) +
+#   ggtitle(label = "Functional Diversity") +
+#   scale_fill_viridis_c () +
+#   theme_light() +
+#   facet_wrap( ~ year)
+
+
+#MAP - DISPERSAL GROUS (FAIL) ----
+#join stratum table and unique FE table
+#first I need to filter teh data because I don't have the infor for all stratum
+
+stratum.abun.clust <-
+  merge(x = fish.abun.clust.gr,
+        y = stratum.shpfile,
+        by = "stratum",
+        all.y = TRUE) %>%
+  sf::st_as_sf()
+
+
+map1 <- stratum.abun.clust %>%
   filter(year_surv %in% c(1995, 2000, 2005, 2010, 2015, 2017)) %>%
   ggplot() +
-  geom_sf(aes(fill = Unique_FE)) +
+  geom_sf(aes(fill = clusterID)) +
   ggtitle(label = "Dispersal Richness") +
   scale_fill_viridis_c () +
   theme_light() +
-  facet_wrap( ~ year_surv)
+  facet_wrap(~ year_surv)
 
 #ggforce::facet_wrap_paginate(~year_surv,
 # nrow = 2, ncol = 2, page = 2)
@@ -102,30 +84,119 @@ map1 <- stratum.FE %>%
 ggsave("plot1995.png", map1, width =  10, height = 10)
 
 
-#Shannon Diversity on Functional Groups ####
+
+#EFFECTIVE DISPERSAL DIVERSITY ####
 #Effective functional diversity with Shannon in clustered groups
-fish.abun.clean.summary.FD <- fish.abun.clust %>%
+fish.abun.clust.gr <- fish.abun.clust %>%
   #first find, for each trawl and each functional group, the total biomass of that group in that trawl
-  group_by(stratum, year_surv, vessel, trip, set, clusterID) %>%
-  dplyr::summarize(group_biomass = sum(density_kgperkm2)) %>%
-  #calculate average biomass per stratum for each functional group
   group_by(stratum, year_surv, clusterID) %>%
-  dplyr::summarize(group_biomass = mean(group_biomass)) %>%
-  ungroup()
+  dplyr::summarize(group_biomass = sum(group_biomass))
+#calculate average biomass per stratum for each functional group
+# group_by(stratum, year_surv, clusterID) %>%
+# dplyr::summarize(group_biomass = mean(group_biomass)) %>%
+# ungroup()
 
 
 #calculate the Hill number for each stratum in each year
-effective.FD <- fish.abun.clean.summary.FD %>%
+effective.dispersal <- fish.abun.clust.gr %>%
   group_by(stratum, year_surv) %>%
   dplyr::summarize(effective_species = exp(diversity(group_biomass, "shannon")))
 
 
-# BETA Clustered------------------
+effective.dispersal.strata <-
+  merge(x = effective.dispersal ,
+        y = stratum.shpfile,
+        by = "stratum",
+        all.y = TRUE) %>%
+  sf::st_as_sf()
+
+
+#EFFECTIVE SPECIES DIVERSITY ####
+#Effective species Diversity with Shannnon on species
+
+effective.species <- fish.abun.clean  %>%
+  #calculate the Hill number for each stratum in each year
+  group_by(stratum, year_surv) %>%
+  dplyr::summarize(effective_species = exp(diversity(group_biomass, "shannon")))
+
+effective.species.strata <-
+  merge(x = effective.species,
+        y = stratum.shpfile,
+        by = "stratum",
+        all.y = TRUE) %>%
+  sf::st_as_sf()
+
+
+## MAPS - EFFECTIVE DIVERSITY -----
+
+map2 <- effective.species.strata %>%
+  filter(year_surv %in% c(1995, 2000, 2005, 2010, 2015)) %>%
+  ggplot() +
+  geom_sf(aes(fill = effective_species),
+          color = NA) +
+  #coord_sf (xlim = c(-61, -46), ylim = c(42.5, 56)) +
+  labs(title = "Spatiotemporal Variation in Effective Species Diversity") +
+  scale_fill_viridis_c (limits = c(1, 13.2)) +
+  theme_light() +
+  facet_wrap(~ year_surv, ncol = 5)+
+  labs(fill = "Effective Species Diversity", colour = "") + # legend titles
+  theme(plot.title = element_text(lineheight = .8, size = 15, hjust = 0.2), # title
+        axis.text.x = element_blank(), # remove x axis labels
+        #axis.text.y = element_blank(), # remove y axis labels  
+        axis.ticks = element_blank(), # remove axis ticks
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), # remove grid lines
+        strip.text.x = element_text(size=14,vjust=0, face = "bold",
+                                    family="Arial Narrow"),
+        legend.position="none")
+#ggforce::facet_wrap_paginate(~year_surv,
+# nrow = 2, ncol = 2, page = 2)
+
+# ggsave("Spatiotemporal Variation in Effective Species Diversity.png",
+#        map2,
+#        width =  10,
+#        height = 10)
+
+
+map3 <- effective.dispersal.strata %>%
+  filter(year_surv %in% c(1995, 2000, 2005,2010,2015)) %>%
+  ggplot() +
+  geom_sf(aes(fill = effective_species), 
+          color = NA) + #This removed the boarders for the strata, can use size =0.01 to make boarders as samll as possible
+  ggtitle(label = "Spatiotemporal Variation in Effective Dispersal Diversity") +
+  scale_fill_viridis_c (limits = c(1, 13.2)) +
+  theme_light() +
+  facet_wrap(~ year_surv, ncol = 5)+
+  labs(fill = "Effective Diversity", colour = "") + # legend titles
+  theme(plot.title = element_text(lineheight = .8, size = 15, hjust = 0.2), # title
+        axis.text.x = element_blank(), # remove x axis labels
+        #axis.text.y = element_blank(), # remove y axis labels  
+        axis.ticks = element_blank(), # remove axis ticks
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), # remove grid lines
+        strip.text.x = element_text(size=14,vjust=0, face = "bold",
+                                    family="Arial Narrow"),
+        legend.position = "bottom",
+        legend.key.size = unit(1, 'cm'))
+# 
+# ggsave("Spatiotemporal Variation in Effective Dispersal Diversity.png",
+#        map3,
+#        width =  10,
+#        height = 10)
+
+map.diversity <- map2 / map3
+
+ggsave("SpatiotemporalVariationInEffectiveDiversity.png",
+       map.diversity,
+       width =  10,
+       height = 10)
+
+# BETA DIVERSITY ----
+
+##BETA DISPERSAL GROUPS ----
 # We split our main dataframe into a list of each dataframe corresponding to
 # each stratum
 
-fish.abun.clean.summary.FD.split <-
-  fish.abun.clean.summary.FD %>%
+fish.abun.clust.gr.split <-
+  fish.abun.clust.gr %>%
   # We exclude stratum for which there is only data for 1 year
   filter(!(
     stratum %in%
@@ -162,7 +233,7 @@ fish.abun.clean.summary.FD.split <-
 # create a presence absence dataframe for each species and year/stratum
 # combinations, by pivoting the taxa column into columns
 fish.pa.pivot.FD <-
-  lapply(fish.abun.clean.summary.FD.split,
+  lapply(fish.abun.clust.gr.split,
          function(df) {
            df <- df %>%
              mutate(
@@ -178,7 +249,7 @@ fish.pa.pivot.FD <-
 # rownames correspond to the stratum/year combination
 fish.pa.pivot.FD.mat <- lapply(fish.pa.pivot.FD, function(df) {
   # remove first column to be casted correctly as integer
-  mat <- as.matrix(df[, -1])
+  mat <- as.matrix(df[,-1])
   mat[is.na(mat)] <- 0
   rownames(mat) <- df$stratum_year
   return(mat)
@@ -215,42 +286,35 @@ fish.beta.FD.df.full.joined <- fish.beta.FD.df.full %>%
   left_join(stratum.shpfile, by = "stratum") %>%
   st_as_sf()
 
-##Beta Clustered Map 1----
+###MAP - BETA DISP.GR----
 # We select the years and plot
-beta.map.FD <- fish.beta.FD.df.full.joined %>%
+beta.map.Disp.GR <- fish.beta.FD.df.full.joined %>%
   filter(from_year == 1996, to_year == 2017) %>%
   ggplot() +
-  geom_sf(aes(fill = value)) +
-  coord_sf (xlim = c(-61,-46), ylim = c(42.5, 58)) +
+  geom_sf(aes(fill = value),
+          color = NA) +
+  #coord_sf (xlim = c(-61, -46), ylim = c(42.5, 56)) +
   labs(
-    title = "Functional Group turn over",
+    title = "Dispersal Group Turn Over",
     subtitle = "1996-2017",
     fill = "Dissimilarity",
     x = "Longitude",
     y = "Latitude"
   ) +
   scale_fill_viridis_c () +
-  theme_light()
-
-
-#Shannon Diversity on Species ####
-#Effective species Diversity with Shannnon on species
-# We first summarize the biomass data to get the man biomass for each year
-# and stratum
-fish.abun.clean.summary <- fish.abun.clean %>%
-  #first find, for each trawl and each functional group, the total biomass of that group in that trawl
-  group_by(stratum, year_surv, vessel, trip, set, taxa_name) %>%
-  dplyr::summarize(group_biomass = sum(density_kgperkm2)) %>%
-  #calculate average biomass per stratum for each functional group
-  group_by(stratum, year_surv, taxa_name) %>%
-  dplyr::summarize(group_biomass = mean(group_biomass)) %>%
-  ungroup()
-
-# BETA Species------------------
+  theme_light()+
+  theme(plot.title = element_text(lineheight = .8, size = 15), # title
+        #axis.text.x = element_blank(), # remove x axis labels
+        #axis.text.y = element_blank(), # remove y axis labels  
+        axis.ticks = element_blank(), # remove axis ticks
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+  
+beta.map.Disp.GR
+## BETA SPECIES ----
 # We split our main dataframe into a list of each dataframe corresponding to
 # each stratum
 
-fish.abun.clean.summary.split <- fish.abun.clean.summary %>%
+fish.abun.clean.split <- fish.abun.clean %>%
   # We exclude stratum for which there is only data for 1 year
   filter(!(
     stratum %in%
@@ -287,7 +351,7 @@ fish.abun.clean.summary.split <- fish.abun.clean.summary %>%
 # create a presence absence dataframe for each species and year/stratum
 # combinations, by pivoting the taxa column into columns
 fish.pa.pivot <-
-  lapply(fish.abun.clean.summary.split,
+  lapply(fish.abun.clean.split,
          function(df) {
            df <- df %>%
              mutate(
@@ -303,7 +367,7 @@ fish.pa.pivot <-
 # rownames correspond to the stratum/year combination
 fish.pa.pivot.mat <- lapply(fish.pa.pivot, function(df) {
   # remove first column to be casted correctly as integer
-  mat <- as.matrix(df[, -1])
+  mat <- as.matrix(df[,-1])
   mat[is.na(mat)] <- 0
   rownames(mat) <- df$stratum_year
   return(mat)
@@ -340,15 +404,16 @@ fish.beta.df.full.joined <- fish.beta.df.full %>%
   left_join(stratum.shpfile, by = "stratum") %>%
   st_as_sf()
 
-##Beta map 1----
+###MAP BETA.SPECIES----
 # We select the years and plot
-beta.map <- fish.beta.df.full.joined %>%
+beta.map.species <- fish.beta.df.full.joined %>%
   filter(from_year == 1996, to_year == 2017) %>%
   ggplot() +
-  geom_sf(aes(fill = value)) +
-  coord_sf (xlim = c(-61,-46), ylim = c(42.5, 58)) +
+  geom_sf(aes(fill = value), 
+          color = NA) +
+  #coord_sf (xlim = c(-61, -46), ylim = c(42.5, 58)) +
   labs(
-    title = "Species turn over",
+    title = "Species Turn Over",
     subtitle = "1996-2017",
     fill = "Dissimilarity",
     x = "Longitude",
@@ -356,80 +421,18 @@ beta.map <- fish.beta.df.full.joined %>%
   ) +
   scale_fill_viridis_c () +
   theme_light() +
-  theme(legend.position = "NULL")
+  theme(legend.position = "NULL")+
+  theme(plot.title = element_text(lineheight = .8, size = 15), # title
+        #axis.text.x = element_blank(), # remove x axis labels
+        #axis.text.y = element_blank(), # remove y axis labels  
+        axis.ticks = element_blank(), # remove axis ticks
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #ggforce::facet_wrap_paginate(~year_surv,
 # nrow = 2, ncol = 2, page = 2)
 
-beta.map1 <- beta.map + beta.map.FD
+beta.map <- beta.map.species + beta.map.Disp.GR
 
-ggsave("BetaDiversity1996-2017.png",
-       beta.map1,
+ggsave("BetaDiversity.png",
+       beta.map,
        width =  10,
        height = 10)
-
-# ALPHA Maps-----
-
-effective.species <- fish.abun.clean.summary  %>%
-  #calculate the Hill number for each stratum in each year
-  group_by(stratum, year_surv) %>%
-  dplyr::summarize(effective_species = exp(diversity(group_biomass, "shannon")))
-
-
-effective.FD.strata <-
-  merge(x = effective.FD ,
-        y = stratum.shpfile,
-        by = "stratum",
-        all.y = TRUE) %>%
-  sf::st_as_sf()
-
-effective.species.strata <-
-  merge(x = effective.species,
-        y = stratum.shpfile,
-        by = "stratum",
-        all.y = TRUE) %>%
-  sf::st_as_sf()
-
-# MAP
-map2 <- effective.species.strata %>%
-  filter(year_surv %in% c(1995, 2000, 2005, 2010)) %>%
-  ggplot() +
-  geom_sf(aes(fill = effective_species)) +
-  labs(title = "Effective Species Diversity") +
-  scale_fill_viridis_c () +
-  theme_light() +
-  facet_wrap( ~ year_surv)
-#ggforce::facet_wrap_paginate(~year_surv,
-# nrow = 2, ncol = 2, page = 2)
-
-ggsave("EffectSpecies1995-2010.png",
-       map2,
-       width =  10,
-       height = 10)
-
-# MAP
-map3 <- effective.FD.strata %>%
-  filter(year_surv %in% c(1995, 2000, 2005, 2010)) %>%
-  ggplot() +
-  geom_sf(aes(fill = effective_species)) +
-  ggtitle(label = "Effective Functional Group Diversity") +
-  scale_fill_viridis_c () +
-  theme_light() +
-  facet_wrap( ~ year_surv)
-#ggforce::facet_wrap_paginate(~year_surv,
-# nrow = 2, ncol = 2, page = 2)
-
-ggsave("EffectiveFD1995-2010.png",
-       map3,
-       width =  10,
-       height = 10)
-
-# MAP
-map4 <- FEve.comm.depth %>%
-  filter(year %in% c(1995, 2000, 2005, 2010)) %>%
-  ggplot() +
-  geom_sf(aes(fill = V1)) +
-  ggtitle(label = "Functional Diversity") +
-  scale_fill_viridis_c () +
-  theme_light() +
-  facet_wrap( ~ year)
-

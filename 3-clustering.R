@@ -1,3 +1,6 @@
+#DATA REQUIRED FROM PAGE 2#
+#THIS SHEET RUNS THE HEIARCHICAL CLUSTERING OF THE FISH TRAITS FOR THE THREE DIFFERENT DATA FILTERING OPTIONS ---- USED IN PAGE 5-MAPS#
+
 #Libraries----
 library(cluster)
 library(gclus)
@@ -41,7 +44,7 @@ fish.traits.60NA.UPGMA.reordered <- reorder(fish.traits.60NA.UPGMA,
 plot(fish.traits.60NA.UPGMA.reordered, hang =-1)
 
 
-# Plots -------------------------------------------------------------------
+# SILHOUETTE WIDTH -------------------------------------------------------------------
 
 #How to determine how many clusters? Silhouette widths, I don't want to cluster based on width anymore, id prefer to cluster based on height. Will keep this to show that it
 
@@ -79,7 +82,7 @@ points(k.best,
        cex=1.5)
 
 
-
+#DENDOGRAMS ----
 
 # Plot reordered dendrogram with group labels
 # plot(
@@ -103,28 +106,60 @@ plot(
   main = "Fish Species Clustered by Dispersal Traits")
 #labels = cutree(fish.traits.UPGMA.60percent, k =33)
 
-rect.hclust(fish.traits.40NA.UPGMA.reordered, k=28)
+rect.hclust(fish.traits.40NA.UPGMA.reordered, k=25)
 
 # Plot the final dendrogram with group colors (RGBCMY...)
 # Fast method using the additional hcoplot() function:
 # !!! Sourcing the function first
 source("functions/hcoplot.R")
-hcoplot(fish.traits.40NA.UPGMA.reordered, fish.traits.40NA.dist, k = 28)
+hcoplot(fish.traits.40NA.UPGMA.reordered, fish.traits.40NA.dist, k = 25)
 
-##Adding cluster ID to data----
+#DATA MANIPULATION ----
+##ADD CLUSTER ID TO TRAIT DATA----
 
-cutree <- cutree(fish.traits.40NA.UPGMA.reordered, k =28)
+cutree <- cutree(fish.traits.40NA.UPGMA.reordered, k =25)
 
 fish.traits.40NA.clust <- cbind(fish.traits.40NA, clusterID = cutree)
 
 fish.traits.40NA.clust$clusterID <- as.factor(fish.traits.40NA.clust $clusterID)
 
 #Write to CSV to determine what traits define each group
-#write.csv(clust.fish,"C:\\Users\\Danielle\\Documents\\Grad school\\FishTraitsClustered40.csv", row.names = TRUE)
+write.csv(fish.traits.40NA.clust,"C:\\Users\\Danielle\\Documents\\Graduate school\\Master Thesis\\FishTraitsClustered25GR.csv", row.names = TRUE)
+
+###CLUST W 5 groups ----
+cutree5 <- cutree(fish.traits.40NA.UPGMA.reordered, k =8)
+
+fish.traits.40NA.clust5 <- cbind(fish.traits.40NA, clusterID = cutree5)
+
+fish.traits.40NA.clust5$clusterID <- as.factor(fish.traits.40NA.clust5 $clusterID)
+
+#Write to CSV to determine what traits define each group
+write.csv(fish.traits.40NA.clust5,"C:\\Users\\Danielle\\Documents\\Graduate school\\Master Thesis\\FishTraitsClustered8GR.csv", row.names = TRUE)
 
 
-cutree <- cutree(fish.traits.60NA.UPGMA.reordered, k =28)
+cutree <- cutree(fish.traits.60NA.UPGMA.reordered, k =25)
 
 fish.traits.60NA.clust <- cbind(fish.traits.60NA, clusterID = cutree)
 
 fish.traits.60NA.clust $clusterID <- as.factor(fish.traits.60NA.clust $clusterID)
+
+##ADD CLUSTER ID TO ABUND DATA ----
+##Lets add the cluster IDs to the abundance data. Seems like it could be useful
+
+clust.ID <- select (fish.traits.40NA.clust, c ("clusterID"))
+clust.ID$taxa_name <- row.names(clust.ID)
+
+fish.abun.clust <-
+  merge(x = fish.abun.clean,
+        y = clust.ID,
+        by = "taxa_name",
+        all.x = TRUE)
+
+
+#Redundant?  group by year and stratum see Page 5 line 78#
+# 
+# fish.abun.clust.gr <- fish.abun.clust %>%
+#   group_by(stratum, year_surv, clusterID) %>%
+#   dplyr::summarise(clust_biomass = sum(final_biomass))
+# 
+#   dplyr::summarise(Unique_FE = n_distinct(clusterID))

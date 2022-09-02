@@ -38,12 +38,14 @@ Abun.fish.strata <- fish.abun.complete %>%
   group_by(stratum, year_surv) %>%
   dplyr::summarize(group_biomass = sum(final_biomass))
 
+fish.abun.complete.noweight <- select(fish.abun.complete, -c(weight))
+
 ##Wide version of the abundance by site (strata,year)----
 Abun.fish.wide <-
-  as.data.table (spread(fish.abun.complete, taxa_name, final_biomass, fill = 0))
+  as.data.table (spread(fish.abun.complete.noweight,taxa_name, final_biomass))
 
 Abun.fish.biomass <-
-  select(Abun.fish.wide,-c ("stratum", "year_surv", "weight"))
+  select(Abun.fish.wide,-c ("stratum", "year_surv"))
 
 Abun.fish.names <- sort(names(Abun.fish.biomass), decreasing = FALSE)
 
@@ -52,21 +54,14 @@ Abun.fish.biomass <- Abun.fish.biomass[, ..Abun.fish.names]
 
 Abun.fish.biomass <- as.matrix(Abun.fish.biomass)
 
-#Betadiversity----
-
-beta.div.j <- lapply(fish.pa.pivot.mat, function(mat) {
-  mat <- beta.div.comp(mat, coef = "J", quant = T)
-  return(mat)
-})
-
 
 #Function diversity measures --------
 
 #Identity <- functcomp(fish.traits.40NA, Abun.fish.biomass)
 
-# functional.diversity.FT <- dbFD(fish.traits.40NA, Abun.fish.biomass, corr = "lingoes")
+functional.diversity.FT <- dbFD(fish.traits.40NA, Abun.fish.biomass, corr = "lingoes")
 
-#saveRDS(functional.diversity.FT, file = "FunctionalDiv.rds")
+saveRDS(functional.diversity.FT, file = "FunctionalDiv.rds")
 
 functional.diversity.FT <- readRDS("FunctionalDiv.rds")
 
@@ -366,9 +361,9 @@ ggplot() +
   ) +
   facet_wrap( ~ stratum)
 
-##Trying gams time ----
+#GAM ----
 
-#gam1 will used the scaled variables with the NA's removed from the data
+##GAM1 scaled variables with the NA's removed from the data ----
 gam1 <- gam(Z_sdbio ~ s(Z_FEve) ,
             data = abun.feve.bin.noNA, method = 'REML')
 summary(gam1)
@@ -384,7 +379,7 @@ data_plotgam1 <-
   theme_bw()
 data_plotgam1
 
-#gam2 is using the data unscaled but with a log of the dependant varable to visualize it better
+##GAM2 unscaled with a log of the dependent variable  ----
 gam2 <- gam(log(bin_sd_biomass) ~ s(bin_mean_FEve) ,
             data = abun.feve.bin.noNA,
             method = 'REML')
@@ -403,6 +398,7 @@ data_plotgam2 <-
   ylab ("Stability (SD of Biomass) ")
 
 data_plotgam2
+## GAM3 noNA and no log ----
 #By loging the dependent varable I achieve two 'normal' distributions for my data. this gives a linear regression. Would I go back to lmms instead?
 
 gam3 <- gam(bin_sd_biomass ~ s(bin_mean_FEve) ,
@@ -434,8 +430,8 @@ gamm1_summary <- summary(gamm1)
 
 gamm2 <- gam(
   log(bin_sd_biomass) ~ bin_mean_FEve +
-    s(stratum, bs = "re") +
-    new_bin,
+    s(stratum, bs = "re", k = 12) +
+    s(new_bin, bs ="re", k = 6),
   data = abun.feve.bin.noNA,
   method = 'REML'
 )
@@ -446,110 +442,8 @@ data_plotgamm2 <-
   geom_point() +
   geom_line(aes(y = fitted(gamm2)),
             colour = "red", size = 1.2) +
-  #geom_line(aes(y = fitted(gam2)),
-  #         colour = "blue", size = 1.2)+
+  #geom_line(aes(y = fitted(gamm1)),
+   #        colour = "blue", size = 1.2)+
   theme_bw()
 data_plotgamm2
 
-
-#MRF----
-
-##### Combine Data ####
-# stratum.shpfile is located on page 5 line 14 THIS ALSO REMOVES MISSING STRATA
-stratum.shpfile.abun <-
- merge(stratum.shpfile, abun.feve.bin.noNA, by = "stratum")
-
-
-##### SpatialPolygonsDataFrame ####
-shp <- as(stratum.shpfile.adjusted, 'Spatial')
-class(shp)
-
-# Create dataframe from data layer in shapefile
-df <- droplevels(as(shp, 'data.frame'))
-
-## project data
-utm.proj <- "+proj=utm +zone=20 +south ellps=WGS84 +datum=WGS84"
-shp <- spTransform(shp, CRS(utm.proj))
-shpf <- fortify(shp, region = "stratum")
-
-#Make sure stratum is set to factor or else!
-df$stratum <- as.factor(df$stratum)
-
-#Create neighbours list
-nb <- poly2nb(shp, row.names = df$stratum )
-names(nb) <- attr(nb, "region.id")
-str(nb[1:6])
-
-#Test using mgcv example
-ctrl <- gam.control(nthreads = 6)
-
-b <-
-  gam(
-    log(bin_sd_biomass) ~ bin_mean_FEve + s(stratum, bs = "mrf", xt = list(nb = nb)),
-    data = abun.feve.bin.noNA,
-    method = "REML",
-    control = ctrl,
-    family = gaussian()
-  )
-
-plot(b, scheme = 1)
-
-
-#Fonyas example using gavin simpsons tutorial
-ctrl <-
-  gam.control(nthreads = 6) # use 6 parallel threads, reduce if fewer physical CPU cores
-m1 <-
-  gam(
-    depth ~ s(stratum, bs = 'mrf', xt = list(nb = nb)),
-    # define MRF smooth
-    data = df,
-    method = 'REML',
-    # fast version of REML smoothness selection
-    control = ctrl,
-    family = gaussian()
-  ) # fit gaussian
-
-
-df <- transform(df,
-                mrfFull = predict(m1, type = 'response'))
-
-## merge data with fortified shapefile
-mdata <- left_join(shpf, df, by = c('id' = 'stratum'))
-
-theme_map <- function(...) {
-  theme_minimal() +
-    theme(
-      ...,
-      axis.line = element_blank(),
-      axis.text.x = element_blank(),
-      axis.text.y = element_blank(),
-      axis.ticks = element_blank(),
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank(),
-      panel.border = element_blank()
-    )
-}
-
-myTheme <- theme_map(legend.position = 'bottom')
-myScale <- scale_fill_viridis(
-  name = '%',
-  option = 'plasma',
-  limits = c(1, 345),
-  labels = function(x)
-    x,
-  guide = guide_colorbar(
-    direction = "horizontal",
-    barheight = unit(2, units = "mm"),
-    barwidth = unit(75, units = "mm"),
-    title.position = 'left',
-    title.hjust = 0.5,
-    label.hjust = 0.5
-  )
-)
-myLabs <- labs(x = NULL, y = NULL, title = 'Strata MRF')
-
-ggplot(mdata, aes(x = long, y = lat, group = group)) +
-  geom_polygon(aes(fill = mrfFull)) +
-  geom_path(col = 'black', alpha = 0.5, size = 0.1) +
-  coord_equal() +
-  myTheme + myScale + myLabs

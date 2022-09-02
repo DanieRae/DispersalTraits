@@ -8,7 +8,6 @@ library(dplyr)
 library(tidyr)
 library(stringr)
 library(devtools)
-library(ggbiplot)
 library(mltools)
 library(data.table)
 library(vegan)
@@ -147,10 +146,22 @@ fish.abun <- cbind(fish.abun, taxa_name = new_species_name)
 #Need to cut out all the species not included in the main data
 # %in% use for comparing two vectors of unequal length#
 
-fish.abun.clean <-
+fish.abun.filtered <-
   fish.abun %>% filter(taxa_name %in% rownames.fish.traits)
 
+##ADUNDANCE DATA NOT FILLED ----
+# We first summarize the biomass data to get the man biomass for each year
+# and stratum
+fish.abun.clean <- fish.abun.filtered %>%
+  #first find, for each trawl and each functional group, the total biomass of that group in that trawl
+  group_by(stratum, year_surv, vessel, trip, set, taxa_name) %>%
+  dplyr::summarize(group_biomass = sum(density_kgperkm2)) %>%
+  #calculate average biomass per stratum for each functional group
+  group_by(stratum, year_surv, taxa_name) %>%
+  dplyr::summarize(group_biomass = mean(group_biomass)) %>%
+  ungroup()
 
+##FILLING ABUNDANCE DATA WITH MISSING SPECIES ABUNDANCES ----
 #table of minimun biomass values
 min_biomass <- fish.abun.clean %>%
   group_by(taxa_name) %>%
