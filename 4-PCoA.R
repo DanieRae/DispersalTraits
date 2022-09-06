@@ -190,8 +190,7 @@ PCOA.plot + geom_segment(
 fish.pcoa <- pcoa(fish.traits.40NA.dist, correction = "lingoes")
 
 numeric_columns_id <- attributes(fish.traits.40NA.dist)$Types == "C"
-fish.traits.60percent.numeric <-
-  fish.traits.60percent[, numeric_columns_id]
+
 
 # biplot.pcoa(fish.pcoa, scale(fish.traits.60percent))
 # abline(h=0, lty=3)

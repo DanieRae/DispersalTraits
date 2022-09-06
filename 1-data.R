@@ -161,12 +161,7 @@ fish.abun.clean <- fish.abun.filtered %>%
   dplyr::summarize(group_biomass = mean(group_biomass)) %>%
   ungroup()
 
-##FILLING ABUNDANCE DATA WITH MISSING SPECIES ABUNDANCES ----
-#table of minimun biomass values
-min_biomass <- fish.abun.filtered %>%
-  group_by(taxa_name) %>%
-  dplyr::summarise(min_biomass = min(density_kgperkm2))
-
+##FILLING WITH ZERO ----
 fish.abun.clean.subset <- fish.abun.filtered %>%
   #first find, for each trawl and each functional group, the total biomass of that group in that trawl
   group_by(stratum, year_surv, vessel, trip, set, taxa_name) %>%
@@ -175,15 +170,10 @@ fish.abun.clean.subset <- fish.abun.filtered %>%
   dplyr::summarize(group_biomass = mean(group_biomass)) %>%
   ungroup()
 
-fish.abun.clean.complete <- fish.abun.clean.subset %>%
+fish.abun.complete <- fish.abun.clean.subset %>%
   #filter(year_surv == 1996)%>%
   #select(taxa_name, stratum, year_surv)%>%
   tidyr::complete(nesting(stratum, year_surv), taxa_name)
 
-
-fish.abun.complete <- fish.abun.clean.complete %>%
-  left_join(min_biomass) %>%
-  mutate(final_biomass = ifelse(is.na(group_biomass), min_biomass, group_biomass)) %>%
-  mutate(weight = ifelse(is.na(group_biomass), 0, 1)) %>%
-  select(-c("group_biomass", "min_biomass"))
-
+#Fill data frame NA with 0
+fish.abun.complete[is.na(fish.abun.complete)] <- 0

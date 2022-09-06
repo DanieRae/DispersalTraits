@@ -92,7 +92,7 @@ stratum.abun.mut <- stratum.abun %>%
 #MODEL ----
 gam.stability <- 
   gam(
-    log(bin_sd_biomass) ~ bin_mean_FEve + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 150),
+    log(bin_sd_biomass) ~ s(bin_mean_FEve) + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 200),
     data = stratum.abun.mut,
     method = "REML",
     type = "terms",
@@ -100,10 +100,11 @@ gam.stability <-
   )
 
 gam.check(gam.stability, rep = 500)
-
+plot(gam.stability)
 ##ERICS CODE ----
-term_predictors <- predict(gam.stability, type ="terms")
-disperse_div_fit <- as.vector(term_predictors[,"bin_mean_FEve"]) #the as.vector part is just to make sure this is a vector, and not a 1D matrix, for plotting.
+summary(gam.stability)
+term_predictors <- predict(gam.stability, type ="terms", se.fit = TRUE)
+disperse_div_fit <- as.vector(term_predictors$fit[,"s(bin_mean_FEve)"]) #the as.vector part is just to make sure this is a vector, and not a 1D matrix, for plotting.
 
 disperse_intercept <- as.vector(attr(term_predictors,"const")) #like this because the intercept is a single number, so it's just stored with the predicted values as a constant
 disperse_div_fit <- disperse_div_fit + disperse_intercept

@@ -30,56 +30,20 @@ library(viridis)
 
 #need to call in the abundance data
 
-#EFFECTIVE SPECIES FILLED ----
-effective.species.filled <- fish.abun.complete  %>%
-  #calculate the Hill number for each stratum in each year
-  group_by(stratum, year_surv) %>%
-  dplyr::summarize(effective_species = exp(diversity(final_biomass, "shannon")))
 
-#ABUNDANCE DATA WRANGLING ----
+#FD LOAD --------
 
-##TOTAL BIOMASS---- 
-#per strata/year
-Abun.fish.strata <- fish.abun.complete %>%
-  group_by(stratum, year_surv) %>%
-  dplyr::summarize(group_biomass = sum(final_biomass))
-
-fish.abun.complete.noweight <- select(fish.abun.complete, -c(weight))
-
-##WIDE----
-#abundance by site (strata,year)
-Abun.fish.wide <-
-  as.data.table (spread(fish.abun.complete.noweight,taxa_name, final_biomass))
-
-Abun.fish.biomass <-
-  select(Abun.fish.wide,-c ("stratum", "year_surv"))
-
-Abun.fish.names <- sort(names(Abun.fish.biomass), decreasing = FALSE)
-
-Abun.fish.biomass <- Abun.fish.biomass[, ..Abun.fish.names]
-
-
-Abun.fish.biomass <- as.matrix(Abun.fish.biomass)
-
-
-#FD --------
-
-#Identity <- functcomp(fish.traits.40NA, Abun.fish.biomass)
-
-# functional.diversity.FT <- dbFD(fish.traits.40NA, Abun.fish.biomass, corr = "lingoes")
-
-##FD SAVED FILE/LOAD ----
-#saveRDS(functional.diversity.FT, file = "FunctionalDiv.rds")
-
-#functional.diversity.FT <- readRDS("FunctionalDiv.rds")
-functional.diversity.FT.new <- readRDS("FunctionalDivNEW.rds")
-
-year.strat <- select(Abun.fish.wide, c("stratum", "year_surv"))
+functional.diversity<- readRDS("FunctionalDiv.rds")
 
 ##FEVE ----
+abun.fish.wide <-
+  as.data.table (spread(fish.abun.complete, taxa_name, group_biomass))
+
+year.strat <- select(abun.fish.wide, c("stratum", "year_surv"))
+
 FEve.comm <-
   cbind(
-    functional.diversity.FT.new$FEve,
+    functional.diversity$FEve,
     stratum = year.strat$stratum,
     year = year.strat$year_surv
   )
@@ -93,7 +57,7 @@ CWM.comm <-
     year = year.strat$year_surv
   )
 
-#BINS ----
+#YEAR BINS ----
 #5 year averages for biomass, FEve, and effective species
 tags <-
   c("1995-1999",
@@ -105,7 +69,12 @@ tags <-
 ##ABUNDANCE ----
 #mean and sd of biomass per bin
 
-abun.bin <- Abun.fish.strata %>%
+##TOTAL BIOMASS per strata/year
+fish.abun.strata <- fish.abun.complete %>%
+  group_by(stratum, year_surv) %>%
+  dplyr::summarize(group_biomass = sum(group_biomass))
+
+abun.bin <- fish.abun.strata %>%
   mutate(
     new_bin = case_when(
       year_surv <= 1999 ~ tags[1],
@@ -121,6 +90,7 @@ abun.bin.mean <- abun.bin %>%
   group_by(stratum, new_bin) %>%
   dplyr::summarize(bin_mean_biomass = mean(group_biomass))
 
+###STABILITY ----
 abun.bin.sd <- abun.bin %>%
   #sd of the binned years
   group_by(stratum, new_bin) %>%
@@ -156,6 +126,13 @@ FEve.bin.sd <- FEve.bin %>%
 FEve.bin.FD <- merge(FEve.bin.mean, FEve.bin.sd)
 
 ## EFFECTIVE SPECIES ----
+
+###EFFECTIVE SPECIES FILLED ----
+effective.species.filled <- fish.abun.complete  %>%
+  #calculate the Hill number for each stratum in each year
+  group_by(stratum, year_surv) %>%
+  dplyr::summarize(effective_species = exp(diversity(group_biomass, "shannon")))
+
 effective.species.filled.bin <- effective.species.filled %>%
   mutate(
     new_bin = case_when(
@@ -172,11 +149,11 @@ effective.species.filled.bin.mean <- effective.species.filled.bin %>%
   dplyr::summarize(bin_mean_effectivesp = mean(effective_species))
 
 #SPECIES-DISPERSAL DIV ----
-effective.species <-
-  dplyr::rename(effective.species, year = year_surv)
+effective.species.filled <-
+  dplyr::rename(effective.species.filled, year = year_surv)
 
 effective.species.FEve <-
-  merge (x = FEve.comm, y = effective.species)
+  merge (x = FEve.comm, y = effective.species.filled)
 
 effective.species.FEve$year <-
   as.factor(effective.species.FEve$year)
@@ -185,9 +162,9 @@ effective.species.FEve$year <-
 #Effective species/FEve plot
 
 plot.effective.FEve <- effective.species.FEve %>%
-  filter (year %in% c(1995,2000,2005,2010)) %>%
+  #filter (year %in% c(1995,2000,2005,2010)) %>%
   ggplot(aes(x = effective_species, y = V1)) +
-  labs(title = "Relationship between FEve and Effective species") +
+  labs(title = "Influence of Effective Species Diversity on Dispersal Diversity") +
   xlab ("Effective Species Diveristy") +
   ylab ("Dispersal Diversity (Functional Evenness)") +
   theme_light() +
@@ -206,7 +183,7 @@ plot.effective.FEve <- effective.species.FEve %>%
 binned.effective.species.FEve <-
   merge (x = FEve.bin.mean, y = effective.species.filled.bin.mean)
 
-# GAM - SPDIV/FEVE BINNED ----
+### GAM - SPDIV/FEVE BINNED ----
 
 gam.spdiv.feve.binned <- gam(bin_mean_FEve ~ bin_mean_effectivesp, 
                              data = binned.effective.species.FEve,
@@ -218,10 +195,9 @@ summary(gam.spdiv.feve.binned)
 #Effective species/FEve plot
 
 plot.binned.effective.species.FEve <- binned.effective.species.FEve %>%
-  #filter (year %in% c(1995,2000,2005,2010)) %>%
   ggplot(aes(x = bin_mean_effectivesp, y = bin_mean_FEve)) +
-  labs(title = "Influence of Effective Species Diversity on Dispersal Diversity") +
-  xlab ("Effective Species Diveristy") +
+  labs(title = "Influence of Effective Species Diversity on Dispersal Diversity", subtitle = "average values taken over 5 year intervals") +
+  xlab ("Effective Species Diversity") +
   ylab ("Dispersal Diversity (Functional Evenness)") +
   theme_light() +
   geom_point() +
