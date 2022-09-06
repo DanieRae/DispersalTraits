@@ -61,28 +61,28 @@ plot(stratum.shpfile.adjusted$geometry)
 #join stratum table and unique FE table
 #first I need to filter teh data because I don't have the infor for all stratum
 
-stratum.abun.clust <-
-  merge(x = fish.abun.clust.gr,
-        y = stratum.shpfile,
-        by = "stratum",
-        all.y = TRUE) %>%
-  sf::st_as_sf()
-
-
-map1 <- stratum.abun.clust %>%
-  filter(year_surv %in% c(1995, 2000, 2005, 2010, 2015, 2017)) %>%
-  ggplot() +
-  geom_sf(aes(fill = clusterID)) +
-  ggtitle(label = "Dispersal Richness") +
-  scale_fill_viridis_c () +
-  theme_light() +
-  facet_wrap(~ year_surv)
-
-#ggforce::facet_wrap_paginate(~year_surv,
-# nrow = 2, ncol = 2, page = 2)
-
-ggsave("plot1995.png", map1, width =  10, height = 10)
-
+# stratum.abun.clust <-
+#   merge(x = fish.abun.clust.gr,
+#         y = stratum.shpfile,
+#         by = "stratum",
+#         all.y = TRUE) %>%
+#   sf::st_as_sf()
+# 
+# 
+# map1 <- stratum.abun.clust %>%
+#   filter(year_surv %in% c(1995, 2000, 2005, 2010, 2015, 2017)) %>%
+#   ggplot() +
+#   geom_sf(aes(fill = clusterID)) +
+#   ggtitle(label = "Dispersal Richness") +
+#   scale_fill_viridis_c () +
+#   theme_light() +
+#   facet_wrap(~ year_surv)
+# 
+# #ggforce::facet_wrap_paginate(~year_surv,
+# # nrow = 2, ncol = 2, page = 2)
+# 
+# ggsave("plot1995.png", map1, width =  10, height = 10)
+# 
 
 
 #EFFECTIVE DISPERSAL DIVERSITY ####

@@ -30,17 +30,24 @@ library(viridis)
 
 #need to call in the abundance data
 
+#EFFECTIVE SPECIES FILLED ----
+effective.species.filled <- fish.abun.complete  %>%
+  #calculate the Hill number for each stratum in each year
+  group_by(stratum, year_surv) %>%
+  dplyr::summarize(effective_species = exp(diversity(final_biomass, "shannon")))
 
-#Abundance ----
+#ABUNDANCE DATA WRANGLING ----
 
-##Total biomass per strata/year----
+##TOTAL BIOMASS---- 
+#per strata/year
 Abun.fish.strata <- fish.abun.complete %>%
   group_by(stratum, year_surv) %>%
   dplyr::summarize(group_biomass = sum(final_biomass))
 
 fish.abun.complete.noweight <- select(fish.abun.complete, -c(weight))
 
-##Wide version of the abundance by site (strata,year)----
+##WIDE----
+#abundance by site (strata,year)
 Abun.fish.wide <-
   as.data.table (spread(fish.abun.complete.noweight,taxa_name, final_biomass))
 
@@ -55,21 +62,24 @@ Abun.fish.biomass <- Abun.fish.biomass[, ..Abun.fish.names]
 Abun.fish.biomass <- as.matrix(Abun.fish.biomass)
 
 
-#Function diversity measures --------
+#FD --------
 
 #Identity <- functcomp(fish.traits.40NA, Abun.fish.biomass)
 
-functional.diversity.FT <- dbFD(fish.traits.40NA, Abun.fish.biomass, corr = "lingoes")
+# functional.diversity.FT <- dbFD(fish.traits.40NA, Abun.fish.biomass, corr = "lingoes")
 
-saveRDS(functional.diversity.FT, file = "FunctionalDiv.rds")
+##FD SAVED FILE/LOAD ----
+#saveRDS(functional.diversity.FT, file = "FunctionalDiv.rds")
 
-functional.diversity.FT <- readRDS("FunctionalDiv.rds")
+#functional.diversity.FT <- readRDS("FunctionalDiv.rds")
+functional.diversity.FT.new <- readRDS("FunctionalDivNEW.rds")
 
 year.strat <- select(Abun.fish.wide, c("stratum", "year_surv"))
 
+##FEVE ----
 FEve.comm <-
   cbind(
-    functional.diversity.FT$FEve,
+    functional.diversity.FT.new$FEve,
     stratum = year.strat$stratum,
     year = year.strat$year_surv
   )
@@ -79,83 +89,21 @@ FEve.comm <- as.data.frame(FEve.comm)
 CWM.comm <-
   cbind(
     stratum = year.strat$stratum,
-    functional.diversity.FT$CWM,
+    functional.diversity.FT.new$CWM,
     year = year.strat$year_surv
   )
 
-#Effective species vs FEve----
-# effective.species <-
-#   dplyr::rename(effective.species, year = year_surv)
-effective.species.FEve <-
-  merge (x = FEve.comm, y = effective.species)
-effective.species.FEve$year <-
-  as.factor(effective.species.FEve$year)
-
-##Effective species/FEve plot----
-
-plot.effective.FEve <- effective.species.FEve %>%
-  filter (year %in% c(1995,2000,2005,2010)) %>%
-  ggplot(aes(y = effective_species, x = V1)) +
-  labs(title = "Relationship between FEve and Effective species") +
-  xlab ("Effective species") +
-  ylab ("Functional Evenness") +
-  geom_point() +
-  geom_smooth(method = lm) +
-  facet_wrap( ~ year)+
-  theme(legend.position = "none")
-#ylim(0,2000)
-
-##FD/FEve plot ----
-#functional evenness by community over time
-
-FEve.comm %>%
-  filter(stratum %in% c(201, 202, 203, 204, 205, 206, 207, 208, 209, 210)) %>%
-  ggplot (aes(x = year, y = V1)) +
-  geom_point(size = 3) +
-  #geom_text()+
-  theme_bw() +
-  #xlab(paste("PCoA 1 -",fish.cdm.eig[1], "%", sep ="" ))+
-  #ylab(paste("PCoA 2 -",fish.cdm.eig[2], "%", sep ="" ))+
-  ggtitle("FEve community 201") +
-  geom_smooth() +
-  theme(legend.position = "none", asp = 1) +
-  scale_color_grey() +
-  facet_wrap( ~ stratum)
-
-# should I do this all again in the clusters?
-
-
-##FD/depth plot----
-
-FD.Depth.Year <- stratum.FE.depth %>%
-  filter(year_surv %in% c(1995, 2000, 2005, 2010, 2015, 2017)) %>%
-  ggplot(aes(x = depth, y = Unique_FE)) +
-  geom_point() +
-  geom_smooth() +
-  facet_wrap( ~ year_surv) +
-  labs(x = "Stratum Depth", y = "Fungtional Groups")
-
-FEve.comm.depth <-
-  merge (x = FEve.comm, y = stratum.new, by = "stratum") %>%
-  sf::st_as_sf()
-
-FEve.Depth.Year <- FEve.comm.depth %>%
-  filter(year %in% c(1995, 2000, 2005, 2010, 2015, 2017)) %>%
-  ggplot(aes(x = depth, y = V1)) +
-  geom_point() +
-  geom_smooth() +
-  facet_wrap( ~ year) +
-  labs(x = "Stratum Depth", y = "Fungtional Evenness")
-
-#Abundance over time, sd by FEve----
-
-##Bins for 5 year biomass table and FEve table----
+#BINS ----
+#5 year averages for biomass, FEve, and effective species
 tags <-
   c("1995-1999",
     "2000-2004",
     "2005-2009",
     "2010-2014",
     "2015-2017")
+
+##ABUNDANCE ----
+#mean and sd of biomass per bin
 
 abun.bin <- Abun.fish.strata %>%
   mutate(
@@ -168,20 +116,6 @@ abun.bin <- Abun.fish.strata %>%
     )
   )
 
-
-FEve.bin <- FEve.comm %>%
-  mutate(
-    new_bin = case_when(
-      year <= 1999 ~ tags[1],
-      year > 1999 & year < 2005 ~ tags[2],
-      year >= 2005 & year < 2010 ~ tags[3],
-      year >= 2010 & year < 2015 ~ tags[4],
-      year >= 2015 & year <= 2017 ~ tags[5]
-    )
-  )
-
-
-##Abundance mean and sd of biomass per bin----
 abun.bin.mean <- abun.bin %>%
   #mean biomass for the binned years
   group_by(stratum, new_bin) %>%
@@ -194,7 +128,21 @@ abun.bin.sd <- abun.bin %>%
 
 abun.bin.biomass <- merge(abun.bin.mean, abun.bin.sd)
 
-##FEve mean and sd per bin----
+
+##FEVE ---- 
+#mean and sd per bin
+
+FEve.bin <- FEve.comm %>%
+  mutate(
+    new_bin = case_when(
+      year <= 1999 ~ tags[1],
+      year > 1999 & year < 2005 ~ tags[2],
+      year >= 2005 & year < 2010 ~ tags[3],
+      year >= 2010 & year < 2015 ~ tags[4],
+      year >= 2015 & year <= 2017 ~ tags[5]
+    )
+  )
+
 FEve.bin.mean <- FEve.bin %>%
   #mean biomass for the binned years
   group_by(stratum, new_bin) %>%
@@ -207,17 +155,154 @@ FEve.bin.sd <- FEve.bin %>%
 
 FEve.bin.FD <- merge(FEve.bin.mean, FEve.bin.sd)
 
+## EFFECTIVE SPECIES ----
+effective.species.filled.bin <- effective.species.filled %>%
+  mutate(
+    new_bin = case_when(
+      year_surv <= 1999 ~ tags[1],
+      year_surv > 1999 & year_surv < 2005 ~ tags[2],
+      year_surv >= 2005 & year_surv < 2010 ~ tags[3],
+      year_surv >= 2010 & year_surv < 2015 ~ tags[4],
+      year_surv >= 2015 & year_surv <= 2017 ~ tags[5]
+    )
+  )
+effective.species.filled.bin.mean <- effective.species.filled.bin %>%
+  #mean biomass for the binned years
+  group_by(stratum, new_bin) %>%
+  dplyr::summarize(bin_mean_effectivesp = mean(effective_species))
+
+#SPECIES-DISPERSAL DIV ----
+effective.species <-
+  dplyr::rename(effective.species, year = year_surv)
+
+effective.species.FEve <-
+  merge (x = FEve.comm, y = effective.species)
+
+effective.species.FEve$year <-
+  as.factor(effective.species.FEve$year)
+
+##PLOT - SPDIV/FEVE ----
+#Effective species/FEve plot
+
+plot.effective.FEve <- effective.species.FEve %>%
+  filter (year %in% c(1995,2000,2005,2010)) %>%
+  ggplot(aes(x = effective_species, y = V1)) +
+  labs(title = "Relationship between FEve and Effective species") +
+  xlab ("Effective Species Diveristy") +
+  ylab ("Dispersal Diversity (Functional Evenness)") +
+  theme_light() +
+  geom_point() +
+  geom_smooth(method = lm) +
+  #facet_wrap( ~ year)+
+  theme(legend.position = "none", 
+        strip.text.x = element_text(size=14,vjust=0, face = "bold",
+                                    family="Arial Narrow"),
+        plot.title = element_text(lineheight = .8, size = 20),
+        axis.text.x = element_text(size = 10),
+        axis.title.x = element_text(size=15),
+        axis.title.y = element_text(size=15)) # title
+       
+#BINNED SPECIES-DISPERSAL DIV ----
+binned.effective.species.FEve <-
+  merge (x = FEve.bin.mean, y = effective.species.filled.bin.mean)
+
+# GAM - SPDIV/FEVE BINNED ----
+
+gam.spdiv.feve.binned <- gam(bin_mean_FEve ~ bin_mean_effectivesp, 
+                             data = binned.effective.species.FEve,
+                             method = "REML",
+                             family = gaussian)
+summary(gam.spdiv.feve.binned)
+
+##PLOT - SPDIV/FEVE BINNED ----
+#Effective species/FEve plot
+
+plot.binned.effective.species.FEve <- binned.effective.species.FEve %>%
+  #filter (year %in% c(1995,2000,2005,2010)) %>%
+  ggplot(aes(x = bin_mean_effectivesp, y = bin_mean_FEve)) +
+  labs(title = "Influence of Effective Species Diversity on Dispersal Diversity") +
+  xlab ("Effective Species Diveristy") +
+  ylab ("Dispersal Diversity (Functional Evenness)") +
+  theme_light() +
+  geom_point() +
+  geom_smooth(method = lm)+
+  #facet_wrap( ~ year)+
+  theme(legend.position = "none", 
+        strip.text.x = element_text(size=14,vjust=0, face = "bold",
+                                    family="Arial Narrow"),
+        plot.title = element_text(lineheight = .8, size = 20),
+        axis.text.x = element_text(size = 10),
+        axis.title.x = element_text(size=15),
+        axis.title.y = element_text(size=15)) # title
+
+##PLOT - FEVE/TIME ----
+#functional evenness by community over time
+
+plot.FEve.time <- FEve.comm %>%
+  #filter(stratum %in% c(201, 202, 203, 204, 205, 206, 207, 208, 209, 210)) %>%
+  ggplot (aes(x = year, y = V1)) +
+  geom_point(size = 3) +
+  #geom_text()+
+  theme_bw() +
+  xlab("Year")+
+  ylab("Dispersal Diversity")+
+  ggtitle("Change in Local Community Dispersal Diversity over a 20 Year Period") +
+  geom_smooth() +
+  scale_color_grey() +
+  facet_wrap_paginate( ~ stratum,
+              nrow = 6,
+              ncol = 6,
+              page = 2)+
+  theme(plot.title = element_text(lineheight = .8, size = 20, hjust = 0.5), # title
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
+        #axis.text.x = element_blank(), # remove x axis labels
+        #axis.text.y = element_blank(), # remove y axis labels  
+        axis.ticks = element_blank(), # remove axis ticks
+        panel.grid.major = element_blank(), 
+        #panel.grid.minor = element_blank(), # remove grid lines
+        strip.text.x = element_text(size=14,vjust=0, face = "bold",
+                                    family="Arial Narrow"),
+        legend.position="none")
+
+
+# should I do this all again in the clusters?
+
+
+##FD/depth plot----
+
+# FD.Depth.Year <- stratum.FE.depth %>%
+#   filter(year_surv %in% c(1995, 2000, 2005, 2010, 2015, 2017)) %>%
+#   ggplot(aes(x = depth, y = Unique_FE)) +
+#   geom_point() +
+#   geom_smooth() +
+#   facet_wrap( ~ year_surv) +
+#   labs(x = "Stratum Depth", y = "Fungtional Groups")
+# 
+# FEve.comm.depth <-
+#   merge (x = FEve.comm, y = stratum.new, by = "stratum") %>%
+#   sf::st_as_sf()
+# 
+# FEve.Depth.Year <- FEve.comm.depth %>%
+#   filter(year %in% c(1995, 2000, 2005, 2010, 2015, 2017)) %>%
+#   ggplot(aes(x = depth, y = V1)) +
+#   geom_point() +
+#   geom_smooth() +
+#   facet_wrap( ~ year) +
+#   labs(x = "Stratum Depth", y = "Fungtional Evenness")
+# 
+
+#MERGE FEVE AND STAB ----
 abun.feve.bin <- merge (FEve.bin.FD,  abun.bin.biomass)
 abun.feve.bin$new_bin <- as.factor(abun.feve.bin$new_bin)
 abun.feve.bin$stratum <- as.factor(abun.feve.bin$stratum)
-
 
 #Need to figure out how to select the first and last year in every bin
 FEve.lag <- FEve.bin %>%
   #sd of the binned years
   filter(year %in% c(1995, 2000, 2005, 2010, 2015))
 
-##sd plot logSDbiomass----
+##PLOT - logSDbiomass----
 plot.logSDbiomass <- abun.feve.bin %>%
   ggplot(aes(x = bin_sd_FEve, y = log(bin_sd_biomass))) +
   labs(title = "Temporal varation in biomass for NFL as a response to community functional evenness") +
@@ -233,7 +318,7 @@ ggsave(
   height = 10
 )
 
-##Mean FEve plot with logsd Biomass ----
+##PLOT - Mean FEve with logsd Biomass ----
 plot.meanfeve <- abun.feve.bin %>%
   filter(stratum %in% c(201:230)) %>%
   ggplot(aes(x = bin_mean_FEve, y = log(bin_sd_biomass))) +
@@ -253,7 +338,7 @@ ggsave(
 )
 
 
-#Rate of biomass change ----
+#RATE OF BIOMASS CHANGE ----
 
 #what is the rate of change of biomass in a strata from year1-yearn
 Abun.fish.rate <- abun.feve.bin %>%
@@ -268,7 +353,7 @@ Abun.fish.rate <- abun.feve.bin %>%
 #  dplyr:: summarise(sd2.rate.change = (weighted.sd(rate.change, weight, na.rm = TRUE))^2)
 
 
-##Rate of change plot----
+##PLOT - RATE OF CHANGE----
 
 plot.ratechange <- Abun.fish.rate %>%
   ggplot(aes(x = bin_mean_FEve, y = rate.change)) +
@@ -284,9 +369,8 @@ plot.ratechange
 #ylim(0,2000)
 #facet_wrap(~year)
 
-##Model rate of biomass change----
 
-###Trying with lm models, checking residuals----
+#LM MODELS----
 #too many rows with NAs to model
 abun.feve.bin.noNA <- abun.feve.bin[complete.cases(abun.feve.bin), ]
 

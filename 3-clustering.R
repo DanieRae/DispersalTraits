@@ -18,20 +18,20 @@ plot(fish.traits.60NA.UPGMA, hang= -1)
 
 #comparing heat map#
 
-dend <- as.dendrogram(fish.traits.40NA.UPGMA)
-heatmap(
-  as.matrix(fish.traits.60NA.dist),
-  Rowv = dend,
-  symm = T,
-  margin=c(3,3))
-
-plot(dend)
+# dend <- as.dendrogram(fish.traits.40NA.UPGMA)
+# heatmap(
+#   as.matrix(fish.traits.60NA.dist),
+#   Rowv = dend,
+#   symm = T,
+#   margin=c(3,3))
+# 
+# plot(dend)
 
 # Shameless code steal from numerical ecology in R
 
 ## Reorder clusters----
-fish.traits.UPGMA.reordered <- reorder(fish.traits.UPGMA, fish.traits.dist)
-plot(fish.traits.UPGMA.reordered, hang =-1, main = "Fish Dispersal Clusters", xlab = "Dispersal Trait Distances", sub = "Method:UPGMA")
+# fish.traits.UPGMA.reordered <- reorder(fish.traits.UPGMA, fish.traits.dist)
+# plot(fish.traits.UPGMA.reordered, hang =-1, main = "Fish Dispersal Clusters", xlab = "Dispersal Trait Distances", sub = "Method:UPGMA")
 
 
 fish.traits.40NA.UPGMA.reordered <- reorder(fish.traits.40NA.UPGMA, 
@@ -39,9 +39,9 @@ fish.traits.40NA.UPGMA.reordered <- reorder(fish.traits.40NA.UPGMA,
 plot(fish.traits.40NA.UPGMA.reordered, hang =-1)
 
 
-fish.traits.60NA.UPGMA.reordered <- reorder(fish.traits.60NA.UPGMA, 
-                                            fish.traits.60NA.dist)
-plot(fish.traits.60NA.UPGMA.reordered, hang =-1)
+# fish.traits.60NA.UPGMA.reordered <- reorder(fish.traits.60NA.UPGMA, 
+#                                             fish.traits.60NA.dist)
+# plot(fish.traits.60NA.UPGMA.reordered, hang =-1)
 
 
 # SILHOUETTE WIDTH -------------------------------------------------------------------
@@ -111,8 +111,8 @@ rect.hclust(fish.traits.40NA.UPGMA.reordered, k=25)
 # Plot the final dendrogram with group colors (RGBCMY...)
 # Fast method using the additional hcoplot() function:
 # !!! Sourcing the function first
-source("functions/hcoplot.R")
-hcoplot(fish.traits.40NA.UPGMA.reordered, fish.traits.40NA.dist, k = 25)
+# source("functions/hcoplot.R")
+# hcoplot(fish.traits.40NA.UPGMA.reordered, fish.traits.40NA.dist, k = 25)
 
 #DATA MANIPULATION ----
 ##ADD CLUSTER ID TO TRAIT DATA----
@@ -137,11 +137,11 @@ fish.traits.40NA.clust5$clusterID <- as.factor(fish.traits.40NA.clust5 $clusterI
 write.csv(fish.traits.40NA.clust5,"C:\\Users\\Danielle\\Documents\\Graduate school\\Master Thesis\\FishTraitsClustered8GR.csv", row.names = TRUE)
 
 
-cutree <- cutree(fish.traits.60NA.UPGMA.reordered, k =25)
-
-fish.traits.60NA.clust <- cbind(fish.traits.60NA, clusterID = cutree)
-
-fish.traits.60NA.clust $clusterID <- as.factor(fish.traits.60NA.clust $clusterID)
+# cutree <- cutree(fish.traits.60NA.UPGMA.reordered, k =25)
+# 
+# fish.traits.60NA.clust <- cbind(fish.traits.60NA, clusterID = cutree)
+# 
+# fish.traits.60NA.clust $clusterID <- as.factor(fish.traits.60NA.clust $clusterID)
 
 ##ADD CLUSTER ID TO ABUND DATA ----
 ##Lets add the cluster IDs to the abundance data. Seems like it could be useful

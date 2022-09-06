@@ -31,14 +31,10 @@ fish.traits.60NA <- fish.traits[, fish.traits.60NA.column]
 # page 297)
 #
 fish.traits.dist <- gowdis(fish.traits, asym.bin = NULL)
-fish.traits.dist
 
 fish.traits.40NA.dist <- gowdis(fish.traits.40NA, asym.bin = NULL)
-fish.traits.40NA.dist
 
 fish.traits.60NA.dist <- gowdis(fish.traits.60NA, asym.bin = NULL)
-fish.traits.60NA.dist
-
 
 #ONEHOT----
 

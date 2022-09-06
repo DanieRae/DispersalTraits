@@ -163,11 +163,11 @@ fish.abun.clean <- fish.abun.filtered %>%
 
 ##FILLING ABUNDANCE DATA WITH MISSING SPECIES ABUNDANCES ----
 #table of minimun biomass values
-min_biomass <- fish.abun.clean %>%
+min_biomass <- fish.abun.filtered %>%
   group_by(taxa_name) %>%
   dplyr::summarise(min_biomass = min(density_kgperkm2))
 
-fish.abun.clean.subset <- fish.abun.clean %>%
+fish.abun.clean.subset <- fish.abun.filtered %>%
   #first find, for each trawl and each functional group, the total biomass of that group in that trawl
   group_by(stratum, year_surv, vessel, trip, set, taxa_name) %>%
   dplyr::summarize(group_biomass = sum(density_kgperkm2)) %>%

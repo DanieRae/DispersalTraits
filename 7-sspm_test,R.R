@@ -1,5 +1,7 @@
-### Make SSPM model
+#LIBRARIES ----
 library(sspm)
+
+# Make SSPM model ----
 
 stratum.shpfile.abun <-
   merge(stratum.shpfile, abun.feve.bin.noNA, by = "stratum")
@@ -76,6 +78,8 @@ View(fit$smooth)
 
 View(fit$smooth[[1]][["xt"]][["penalty"]])
 
+#Exploring gams with eric ---- 
+
 # helper function 
 stratum_mrf <- sspm:::ICAR(data_frame = dataset@data, boundaries = bound, dimension = "space", time = dataset@time, k=10, bs = "mrf", xt = NULL )
 
@@ -85,21 +89,31 @@ stratum_mrf_pen <-sspm:::ICAR_space(patches = stratum.shpfile.geom, space = "str
 stratum.abun.mut <- stratum.abun %>%
   mutate(stratum = as.factor(stratum))
 
-#Exploring gams with eric ---- 
-gam_test <- 
+#MODEL ----
+gam.stability <- 
   gam(
-    log(bin_sd_biomass) ~ bin_mean_FEve + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 6),
+    log(bin_sd_biomass) ~ bin_mean_FEve + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 150),
     data = stratum.abun.mut,
     method = "REML",
+    type = "terms",
     family = gaussian()
   )
 
-gam.check(gam_test, rep = 500)
-##PLOT ----
+gam.check(gam.stability, rep = 500)
+
+##ERICS CODE ----
+term_predictors <- predict(gam.stability, type ="terms")
+disperse_div_fit <- as.vector(term_predictors[,"bin_mean_FEve"]) #the as.vector part is just to make sure this is a vector, and not a 1D matrix, for plotting.
+
+disperse_intercept <- as.vector(attr(term_predictors,"const")) #like this because the intercept is a single number, so it's just stored with the predicted values as a constant
+disperse_div_fit <- disperse_div_fit + disperse_intercept
+
+
+##PLOT GAM ----
 dataset_smoothed_plot <-
   ggplot(data = stratum.abun.mut, aes(y = log(bin_sd_biomass), x = bin_mean_FEve)) +
   geom_point() +
-  geom_line(aes(y = fitted(gam_test)),
+  geom_line(aes(y = disperse_div_fit),
             colour = "red", size = 1.2) +
   theme_bw()+
   labs(title = "Marine Community Stability in Response to Dispersal Diversity") +
