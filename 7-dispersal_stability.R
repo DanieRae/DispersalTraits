@@ -4,18 +4,13 @@ library(sspm)
 # Make SSPM model ----
 
 stratum.shpfile.abun <-
-  merge(stratum.shpfile, abun.feve.bin.noNA, by = "stratum")
+  merge(stratum.shpfile.adjusted, abun.feve.bin.noNA, by = "stratum")
 
 # The package needs to think we are using points, so we make some
 stratum_points <- stratum.shpfile.abun %>% 
   st_point_on_surface() %>% 
   select(stratum, new_bin)
 
-
-plot <-stratum.shpfile.abun %>% 
-  ggplot() + 
-  geom_sf() + 
-  geom_sf(data = stratum_points)
 
 #Need to take this sf file and pull just the data without the geometries, we are using this rather than the "abun.feve.bin.noNA" data table because this table has more strata than we have shpfiles for.
 
@@ -28,6 +23,7 @@ stratum.shpfile.geom <- select(stratum.shpfile.abun, c("stratum", "geometry"))%>
 
 stratum.shpfile.geom <- distinct(stratum.shpfile.geom) %>%
   sf::st_as_sf()
+
 
 # The package needs to know the boundaries of all the polygons, but because of all
 # the gaps we have to take convex hull and buffer
@@ -74,9 +70,6 @@ dataset_smoothed <- dataset %>%
              predict = FALSE)
 
 fit <- spm_smoothed_fit(dataset_smoothed)[[1]]
-View(fit$smooth)
-
-View(fit$smooth[[1]][["xt"]][["penalty"]])
 
 #Exploring gams with eric ---- 
 
@@ -92,7 +85,7 @@ stratum.abun.mut <- stratum.abun %>%
 #MODEL ----
 gam.stability <- 
   gam(
-    log(bin_sd_biomass) ~ s(bin_mean_FEve) + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 200),
+    log(bin_sd_biomass) ~ bin_mean_FEve + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 200),
     data = stratum.abun.mut,
     method = "REML",
     type = "terms",
@@ -101,14 +94,18 @@ gam.stability <-
 
 gam.check(gam.stability, rep = 500)
 plot(gam.stability)
+
+
 ##ERICS CODE ----
 summary(gam.stability)
 term_predictors <- predict(gam.stability, type ="terms", se.fit = TRUE)
-disperse_div_fit <- as.vector(term_predictors$fit[,"s(bin_mean_FEve)"]) #the as.vector part is just to make sure this is a vector, and not a 1D matrix, for plotting.
+disperse_div_fit <- as.vector(term_predictors$fit[,"bin_mean_FEve"]) #the as.vector part is just to make sure this is a vector, and not a 1D matrix, for plotting.
 
 disperse_intercept <- as.vector(attr(term_predictors,"const")) #like this because the intercept is a single number, so it's just stored with the predicted values as a constant
 disperse_div_fit <- disperse_div_fit + disperse_intercept
 
+#Confidence Int
+disp_div_se <- as.vector(term_predictors$se.fit[,"bin_mean_FEve"])
 
 ##PLOT GAM ----
 dataset_smoothed_plot <-
@@ -116,9 +113,18 @@ dataset_smoothed_plot <-
   geom_point() +
   geom_line(aes(y = disperse_div_fit),
             colour = "red", size = 1.2) +
+  geom_ribbon(aes(ymin=disperse_div_fit - 1.96*disp_div_se,
+                  ymax=disperse_div_fit + 1.96*disp_div_se),
+              fill="red", alpha= 0.2)+
   theme_bw()+
-  labs(title = "Marine Community Stability in Response to Dispersal Diversity") +
-  xlab("Dispersal Diversity")+
-  ylab ("Biomass")
+  xlab("Dispersal Diversity (functional evenness)")+
+  ylab ("Stability (temporal change in biomass)")+
+  theme(axis.title.x = element_text(size = 15,face = "bold"),
+        axis.title.y = element_text(size = 15, face = "bold"))
 
 dataset_smoothed_plot
+# 
+# ggsave("MarineCommunityStab GAM.png",
+#        dataset_smoothed_plot,
+#        height = 10,
+#        width = 15)

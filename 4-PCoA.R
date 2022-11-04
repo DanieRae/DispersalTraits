@@ -31,17 +31,16 @@ PCOA.plot.5GR <-
   theme_bw() +
   xlab(paste("PCoA 1: ", fish.cdm.eig[1], "%", sep = "")) +
   ylab(paste("PCoA 2: ", fish.cdm.eig[2], "%", sep = "")) +
-  ggtitle("PCoA Marine fish dispersal") +
   theme(legend.position = "none", asp = 1)
 
 #PLOT - PCoA W/ VECTORS ----
 PCOA.plot<-
   ggplot(data = fish.cmd.data, aes (x = X, y = Y)) +
-  geom_point(size = 2) +
+  geom_point(size = 2, color = "grey") +
+  stat_ellipse(aes(color = clusterID))+
   theme_bw() +
   xlab(paste("PCoA 1: ", fish.cdm.eig[1], "%", sep = "")) +
   ylab(paste("PCoA 2: ", fish.cdm.eig[2], "%", sep = "")) +
-  ggtitle("PCoA Marine fish dispersal") +
   theme(legend.position = "none", asp = 1)
 # Code taken from ape::biplot.pcoa
 get_U_matrix <- function(Y,
@@ -94,7 +93,7 @@ new_var_name <-
 
 U$var_name <- new_var_name
 
-PCOA.plot + geom_segment(
+PCOAplot <- PCOA.plot + geom_segment(
   data = U,
   aes(x = 0,
       xend = x,
@@ -110,6 +109,7 @@ PCOA.plot + geom_segment(
         colour = "black"
   )
 
+ggsave("PCOAplot.png", PCOAplot, width =  10, height = 10)
 #PLOT - PCoA 60NA ----
 # fish.cmd <-
 #   cmdscale(fish.traits.60NA.dist,

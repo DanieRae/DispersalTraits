@@ -10,7 +10,7 @@ min_biomass <- fish.abun.filtered %>%
   dplyr::summarise(min_biomass = min(density_kgperkm2))
 
 
-fish.abun.complete.NA <- fish.abun.clean.subset %>%
+fish.abun.complete.NA <- fish.abun.clean %>%
   #filter(year_surv == 1996)%>%
   #select(taxa_name, stratum, year_surv)%>%
   tidyr::complete(nesting(stratum, year_surv), taxa_name)

@@ -1,4 +1,5 @@
-#Install and load packages, istallation shouldn't be necessary again----
+# Install and load packages ---- 
+#istallation shouldn't be necessary again
 
 # install.packages("devtools")
 # install_github("vqv/ggbiplot")
@@ -15,6 +16,7 @@ library(ade4)
 library(adespatial)
 library(reshape)
 library(skimr)
+library(sf)
 
 # PART ONE - TRAIT DATA ----
 
@@ -118,10 +120,6 @@ skim.tot <- skim(fish.traits)
 raw.fish.abun <-
   read.csv("NL_Biomass.csv", fileEncoding = "UTF-8-BOM")
 
-#I need to make the taxa names match with the other data set
-## this doesn't appear to be used
-rownames.fish.traits <- rownames(fish.traits)
-
 #This takes the species list and puts it into a character#
 species_name <- raw.fish.abun$taxa_name
 
@@ -144,14 +142,17 @@ fish.abun <- select(raw.fish.abun,-c ("taxa_name"))
 fish.abun <- cbind(fish.abun, taxa_name = new_species_name)
 
 #Need to cut out all the species not included in the main data
+
+#make the taxa names match with the other data set
+rownames.fish.traits <- rownames(fish.traits)
+
 # %in% use for comparing two vectors of unequal length#
 
 fish.abun.filtered <-
   fish.abun %>% filter(taxa_name %in% rownames.fish.traits)
 
 ##ADUNDANCE DATA NOT FILLED ----
-# We first summarize the biomass data to get the man biomass for each year
-# and stratum
+  # We first summarize the biomass data to get the mean biomass for each year and stratum
 fish.abun.clean <- fish.abun.filtered %>%
   #first find, for each trawl and each functional group, the total biomass of that group in that trawl
   group_by(stratum, year_surv, vessel, trip, set, taxa_name) %>%
@@ -162,18 +163,45 @@ fish.abun.clean <- fish.abun.filtered %>%
   ungroup()
 
 ##FILLING WITH ZERO ----
-fish.abun.clean.subset <- fish.abun.filtered %>%
-  #first find, for each trawl and each functional group, the total biomass of that group in that trawl
-  group_by(stratum, year_surv, vessel, trip, set, taxa_name) %>%
-  dplyr::summarize(group_biomass = sum(density_kgperkm2)) %>%
-  group_by(stratum, year_surv, taxa_name) %>%
-  dplyr::summarize(group_biomass = mean(group_biomass)) %>%
-  ungroup()
-
-fish.abun.complete <- fish.abun.clean.subset %>%
+#Needs to be filled with 0 to determine the change in biomass from year to year, when species were not detected in a year they are given an abundance of 0
+fish.abun.complete <- fish.abun.clean %>%
   #filter(year_surv == 1996)%>%
   #select(taxa_name, stratum, year_surv)%>%
   tidyr::complete(nesting(stratum, year_surv), taxa_name)
 
 #Fill data frame NA with 0
 fish.abun.complete[is.na(fish.abun.complete)] <- 0
+
+# PART THREE - STRATUM SHAPEFILE ------
+
+# read all files of the shapefile
+stratum.shpfile.raw <- st_read("strata") 
+
+#strata geometry, this joins the multiple polygons
+stratum.shpfile <- stratum.shpfile.raw %>%
+  # Validating geometries to make operations on them
+  st_make_valid() %>%
+  dplyr::mutate(stratum_id_base = str_sub(stratum, 1, 3)) %>%
+  group_by(DIV,stratum_id_base) %>%
+  dplyr::summarise(geometry = st_union(geometry)) %>%
+  dplyr::rename(stratum = stratum_id_base)%>%
+  filter(DIV != "2H", DIV != "2G")%>%
+  filter(stratum !=613, stratum !=776, stratum !=777, stratum !=778)
+
+#need to filter the adjusted strata, this will be used for the MRF on page 7
+strata.keep <- stratum.shpfile$stratum
+
+#this adjusted strata has been altered so that the margins of neighboring strata properly connect, to be used for the MRF
+stratum.shpfile.adjusted <- st_read("strata_adjusted")%>%
+  # Validating geometries to make operations on them
+  st_make_valid() %>%
+  dplyr::mutate(stratum_id_base = str_sub(stratum, 1, 3)) %>%
+  group_by(stratum_id_base) %>%
+  dplyr::summarise(geometry = st_union(geometry)) %>%
+  dplyr::rename(stratum = stratum_id_base)%>%
+  filter(stratum %in% strata.keep)
+
+##Stratum Depth  ----
+stratum.depth <- st_read("stratum_depth.csv") 
+
+stratum.depth$depth.ave <- as.numeric(stratum.depth$depth.ave)

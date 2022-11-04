@@ -100,13 +100,14 @@ points(k.best,
 plot(
   fish.traits.40NA.UPGMA.reordered,
   hang = -1,
-  xlab = "Groups",
-  sub = "(Functional Entities)",
+  xlab = NULL,
+  sub = NULL,
   ylab = "Height",
-  main = "Fish Species Clustered by Dispersal Traits")
-#labels = cutree(fish.traits.UPGMA.60percent, k =33)
+  main = NULL)
 
-rect.hclust(fish.traits.40NA.UPGMA.reordered, k=25)
+
+
+rect.hclust(fish.traits.40NA.UPGMA.reordered, k=5)
 
 # Plot the final dendrogram with group colors (RGBCMY...)
 # Fast method using the additional hcoplot() function:
@@ -127,7 +128,7 @@ fish.traits.40NA.clust$clusterID <- as.factor(fish.traits.40NA.clust $clusterID)
 write.csv(fish.traits.40NA.clust,"C:\\Users\\Danielle\\Documents\\Graduate school\\Master Thesis\\FishTraitsClustered25GR.csv", row.names = TRUE)
 
 ###CLUST W 5 groups ----
-cutree5 <- cutree(fish.traits.40NA.UPGMA.reordered, k =8)
+cutree5 <- cutree(fish.traits.40NA.UPGMA.reordered, k =5)
 
 fish.traits.40NA.clust5 <- cbind(fish.traits.40NA, clusterID = cutree5)
 
@@ -136,6 +137,7 @@ fish.traits.40NA.clust5$clusterID <- as.factor(fish.traits.40NA.clust5 $clusterI
 #Write to CSV to determine what traits define each group
 write.csv(fish.traits.40NA.clust5,"C:\\Users\\Danielle\\Documents\\Graduate school\\Master Thesis\\FishTraitsClustered8GR.csv", row.names = TRUE)
 
+#Repeat for clusters with 40% data
 
 # cutree <- cutree(fish.traits.60NA.UPGMA.reordered, k =25)
 # 

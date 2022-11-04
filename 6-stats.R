@@ -18,18 +18,7 @@ library(proj4)
 library(spdep)
 library(mgcv)
 library(viridis)
-
-#NOTES ----
-#With the clustering of the species here a a few responses that should be looked at#
-
-#FOR how much over redundancy in each cluster is there? Does the pattern of over redundancy change spatially? How many FEs have just one species? Is there a clear pattern in what characteristics have only 1 species? What are the ecological services provided by FE groups with high FOR vs those with none? Do we see change over time (quick/slow/more or less diversity in different areas), larger home ranges, higher dispersal capabilitys in certian FEs?
-
-#Include abundance distributions (biomass) across FE's, before and during collapse
-
-#How does the FE diversity compare to hill numbers locally (alpha and gamma) gradients of beta accross the space
-
-#need to call in the abundance data
-
+library(AICcmodavg)
 
 #FD LOAD --------
 
@@ -66,7 +55,7 @@ tags <-
     "2010-2014",
     "2015-2017")
 
-##ABUNDANCE ----
+##STABILITY ----
 #mean and sd of biomass per bin
 
 ##TOTAL BIOMASS per strata/year
@@ -90,7 +79,7 @@ abun.bin.mean <- abun.bin %>%
   group_by(stratum, new_bin) %>%
   dplyr::summarize(bin_mean_biomass = mean(group_biomass))
 
-###STABILITY ----
+
 abun.bin.sd <- abun.bin %>%
   #sd of the binned years
   group_by(stratum, new_bin) %>%
@@ -98,8 +87,8 @@ abun.bin.sd <- abun.bin %>%
 
 abun.bin.biomass <- merge(abun.bin.mean, abun.bin.sd)
 
-
-##FEVE ---- 
+  
+##DISPERSAL DIVERSITY ---- 
 #mean and sd per bin
 
 FEve.bin <- FEve.comm %>%
@@ -125,9 +114,7 @@ FEve.bin.sd <- FEve.bin %>%
 
 FEve.bin.FD <- merge(FEve.bin.mean, FEve.bin.sd)
 
-## EFFECTIVE SPECIES ----
-
-###EFFECTIVE SPECIES FILLED ----
+## EFFECTIVE SPECIES DIVERSITY ----
 effective.species.filled <- fish.abun.complete  %>%
   #calculate the Hill number for each stratum in each year
   group_by(stratum, year_surv) %>%
@@ -148,72 +135,80 @@ effective.species.filled.bin.mean <- effective.species.filled.bin %>%
   group_by(stratum, new_bin) %>%
   dplyr::summarize(bin_mean_effectivesp = mean(effective_species))
 
-#SPECIES-DISPERSAL DIV ----
-effective.species.filled <-
-  dplyr::rename(effective.species.filled, year = year_surv)
+#DISPERSAL AND STAB ----
+abun.feve.bin <- merge (FEve.bin.FD,  abun.bin.biomass)
+abun.feve.bin$new_bin <- as.factor(abun.feve.bin$new_bin)
+abun.feve.bin$stratum <- as.factor(abun.feve.bin$stratum)
 
-effective.species.FEve <-
-  merge (x = FEve.comm, y = effective.species.filled)
+#too many rows with NAs to model
+abun.feve.bin.noNA <- abun.feve.bin[complete.cases(abun.feve.bin), ]
 
-effective.species.FEve$year <-
-  as.factor(effective.species.FEve$year)
+# EFFECTIVE SPECIES STAB ----
 
-##PLOT - SPDIV/FEVE ----
-#Effective species/FEve plot
+effective.species.stab <- merge(effective.species.filled.bin.mean, abun.bin.sd)
 
-plot.effective.FEve <- effective.species.FEve %>%
-  #filter (year %in% c(1995,2000,2005,2010)) %>%
-  ggplot(aes(x = effective_species, y = V1)) +
-  labs(title = "Influence of Effective Species Diversity on Dispersal Diversity") +
-  xlab ("Effective Species Diveristy") +
-  ylab ("Dispersal Diversity (Functional Evenness)") +
-  theme_light() +
-  geom_point() +
-  geom_smooth(method = lm) +
-  #facet_wrap( ~ year)+
-  theme(legend.position = "none", 
-        strip.text.x = element_text(size=14,vjust=0, face = "bold",
-                                    family="Arial Narrow"),
-        plot.title = element_text(lineheight = .8, size = 20),
-        axis.text.x = element_text(size = 10),
-        axis.title.x = element_text(size=15),
-        axis.title.y = element_text(size=15)) # title
-       
-#BINNED SPECIES-DISPERSAL DIV ----
+effective.species.stab <- effective.species.stab[complete.cases(effective.species.stab), ]
+
+effective.species.stab$new_bin <- as.factor(effective.species.stab$new_bin)
+
+#TAXONOMIC VS DISPERSAL DIV ----
+
+###ANOVA ----
+stab.feve.species <- merge(abun.feve.bin.noNA, effective.species.stab)
+
+anova1 <- aov (bin_sd_biomass ~ bin_mean_FEve, data = stab.feve.species)
+
+anova2 <- aov (bin_sd_biomass ~ bin_mean_effectivesp, data = stab.feve.species)
+
+anova3 <- aov (bin_sd_biomass ~ bin_mean_FEve + bin_mean_effectivesp, data = stab.feve.species)
+
+anova4 <- aov (bin_sd_biomass ~ bin_mean_FEve * bin_mean_effectivesp, data = stab.feve.species)
+
+model.set <- list(anova1,anova2, anova3, anova4)
+model.names <- c("one-way-feve","one-way-spec","two way", "interaction")
+
+aictab(model.set, modnames = model.names)
+summary(anova4)
+### LM - SPDIV/FEVE BINNED change this to corr ----
 binned.effective.species.FEve <-
   merge (x = FEve.bin.mean, y = effective.species.filled.bin.mean)
 
-### GAM - SPDIV/FEVE BINNED ----
+lm <-cor.test( ~ bin_mean_FEve + bin_mean_effectivesp,
+                             data = binned.effective.species.FEve)
 
-gam.spdiv.feve.binned <- gam(bin_mean_FEve ~ bin_mean_effectivesp, 
-                             data = binned.effective.species.FEve,
-                             method = "REML",
-                             family = gaussian)
-summary(gam.spdiv.feve.binned)
+plot(lm)
+
+summary(lm)
+confint(lm, 'bin_mean_effectivesp', level = 0.95)
 
 ##PLOT - SPDIV/FEVE BINNED ----
 #Effective species/FEve plot
 
 plot.binned.effective.species.FEve <- binned.effective.species.FEve %>%
   ggplot(aes(x = bin_mean_effectivesp, y = bin_mean_FEve)) +
-  labs(title = "Influence of Effective Species Diversity on Dispersal Diversity", subtitle = "average values taken over 5 year intervals") +
   xlab ("Effective Species Diversity") +
-  ylab ("Dispersal Diversity (Functional Evenness)") +
+  ylab ("Dispersal Diversity") +
   theme_light() +
   geom_point() +
-  geom_smooth(method = lm)+
-  #facet_wrap( ~ year)+
+  stat_smooth(method=glm)+
+  # geom_line(aes(y = fitted(lm)),
+  #           colour = "red", size = 1.2) +
   theme(legend.position = "none", 
-        strip.text.x = element_text(size=14,vjust=0, face = "bold",
+        strip.text.x = element_text(size=20,vjust=0, face = "bold",
                                     family="Arial Narrow"),
         plot.title = element_text(lineheight = .8, size = 20),
-        axis.text.x = element_text(size = 10),
-        axis.title.x = element_text(size=15),
-        axis.title.y = element_text(size=15)) # title
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title.x = element_text(size=20),
+        axis.title.y = element_text(size=20)) # title
+
+ggsave("Influence of Effective Species on Dispersal Diversity.png",
+       plot.binned.effective.species.FEve,
+       width =  15,
+       height = 10)
 
 ##PLOT - FEVE/TIME ----
 #functional evenness by community over time
-
 plot.FEve.time <- FEve.comm %>%
   #filter(stratum %in% c(201, 202, 203, 204, 205, 206, 207, 208, 209, 210)) %>%
   ggplot (aes(x = year, y = V1)) +
@@ -245,7 +240,7 @@ plot.FEve.time <- FEve.comm %>%
 # should I do this all again in the clusters?
 
 
-##FD/depth plot----
+#FD/depth plot----
 
 # FD.Depth.Year <- stratum.FE.depth %>%
 #   filter(year_surv %in% c(1995, 2000, 2005, 2010, 2015, 2017)) %>%
@@ -268,31 +263,10 @@ plot.FEve.time <- FEve.comm %>%
 #   labs(x = "Stratum Depth", y = "Fungtional Evenness")
 # 
 
-#MERGE FEVE AND STAB ----
-abun.feve.bin <- merge (FEve.bin.FD,  abun.bin.biomass)
-abun.feve.bin$new_bin <- as.factor(abun.feve.bin$new_bin)
-abun.feve.bin$stratum <- as.factor(abun.feve.bin$stratum)
-
 #Need to figure out how to select the first and last year in every bin
 FEve.lag <- FEve.bin %>%
   #sd of the binned years
   filter(year %in% c(1995, 2000, 2005, 2010, 2015))
-
-##PLOT - logSDbiomass----
-plot.logSDbiomass <- abun.feve.bin %>%
-  ggplot(aes(x = bin_sd_FEve, y = log(bin_sd_biomass))) +
-  labs(title = "Temporal varation in biomass for NFL as a response to community functional evenness") +
-  xlab ("Functional Evenness [sd(FEve)]") +
-  ylab ("log(sd(biomass))") +
-  geom_point() +
-  geom_smooth(method = lm, aes(color = new_bin))
-
-ggsave(
-  "Biomass stability (sd) with FEve (sd).png",
-  plot.logSDbiomass,
-  width =  10,
-  height = 10
-)
 
 ##PLOT - Mean FEve with logsd Biomass ----
 plot.meanfeve <- abun.feve.bin %>%
@@ -306,12 +280,41 @@ plot.meanfeve <- abun.feve.bin %>%
   theme() +
   facet_wrap( ~ stratum)
 
-ggsave(
-  "Biomass stability (sd) with FEve (mean).png",
-  plot.meanfeve,
-  width =  10,
-  height = 10
-)
+# ggsave(
+#   "Biomass stability (sd) with FEve (mean).png",
+#   plot.meanfeve,
+#   width =  10,
+#   height = 10
+# )
+
+
+##PLOT - STAB/FEVE LOCAL ***ask eric----  
+#functional evenness and stab by community over time
+abun.feve.bin %>%
+  ggplot(aes(x = bin_mean_FEve, y = log(bin_sd_biomass))) +
+  geom_point(size = 2) +
+  #geom_text()+
+  theme_bw() +
+  xlab("DD")+
+  ylab("Stab")+
+  ggtitle("Change in Local Community Dispersal Diversity over a 20 Year Period") +
+  geom_path() +
+  scale_color_grey() +
+  facet_wrap_paginate( ~ stratum,
+                       nrow = 5,
+                       ncol = 5,
+                       page = 1)+
+  theme(plot.title = element_text(lineheight = .8, size = 20, hjust = 0.5), # title
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
+        #axis.text.x = element_blank(), # remove x axis labels
+        #axis.text.y = element_blank(), # remove y axis labels  
+        axis.ticks = element_blank(), # remove axis ticks
+        panel.grid.major = element_blank(), 
+        #panel.grid.minor = element_blank(), # remove grid lines
+        strip.text.x = element_text(size=14,vjust=0, face = "bold",
+                                    family="Arial Narrow"),
+        legend.position="none")
 
 
 #RATE OF BIOMASS CHANGE ----
@@ -347,8 +350,7 @@ plot.ratechange
 
 
 #LM MODELS----
-#too many rows with NAs to model
-abun.feve.bin.noNA <- abun.feve.bin[complete.cases(abun.feve.bin), ]
+
 
 #have to scale the variables as they have different scales
 abun.feve.bin.noNA$Z_FEve <- scale(abun.feve.bin.noNA$bin_mean_FEve)

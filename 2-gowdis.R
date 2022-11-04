@@ -25,6 +25,7 @@ fish.traits.60NA.column<- names(fish.traits.NAs[fish.traits.NAs <= 58])
 
 fish.traits.60NA <- fish.traits[, fish.traits.60NA.column]
 
+skim.60 <- skim(fish.traits.60NA)
 #GOWERS MATRIX ----
 #FD package is suppose to be able to use many different data types
 # Calculate the distance matrix using Gower coefficient (S15 in numerical ecology book
