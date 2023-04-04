@@ -39,12 +39,6 @@ FEve.comm <-
 
 FEve.comm <- as.data.frame(FEve.comm)
 
-CWM.comm <-
-  cbind(
-    stratum = year.strat$stratum,
-    functional.diversity.FT.new$CWM,
-    year = year.strat$year_surv
-  )
 
 #YEAR BINS ----
 #5 year averages for biomass, FEve, and effective species
@@ -89,7 +83,7 @@ abun.bin.biomass <- merge(abun.bin.mean, abun.bin.sd)
 
   
 ##DISPERSAL DIVERSITY ---- 
-#mean and sd per bin
+#mean 
 
 FEve.bin <- FEve.comm %>%
   mutate(
@@ -107,12 +101,6 @@ FEve.bin.mean <- FEve.bin %>%
   group_by(stratum, new_bin) %>%
   dplyr::summarize(bin_mean_FEve = mean(V1))
 
-FEve.bin.sd <- FEve.bin %>%
-  #sd of the binned years
-  group_by(stratum, new_bin) %>%
-  dplyr::summarise(bin_sd_FEve = sd(V1))
-
-FEve.bin.FD <- merge(FEve.bin.mean, FEve.bin.sd)
 
 ## EFFECTIVE SPECIES DIVERSITY ----
 effective.species.filled <- fish.abun.complete  %>%
@@ -136,12 +124,18 @@ effective.species.filled.bin.mean <- effective.species.filled.bin %>%
   dplyr::summarize(bin_mean_effectivesp = mean(effective_species))
 
 #DISPERSAL AND STAB ----
-abun.feve.bin <- merge (FEve.bin.FD,  abun.bin.biomass)
+abun.feve.bin <- merge (FEve.bin.mean,  abun.bin.sd)
 abun.feve.bin$new_bin <- as.factor(abun.feve.bin$new_bin)
 abun.feve.bin$stratum <- as.factor(abun.feve.bin$stratum)
 
 #too many rows with NAs to model
 abun.feve.bin.noNA <- abun.feve.bin[complete.cases(abun.feve.bin), ]
+
+
+#have to scale the variables as they have different scales
+abun.feve.bin.noNA$Z_FEve <- scale(abun.feve.bin.noNA$bin_mean_FEve)
+abun.feve.bin.noNA$inverse_sd <- abun.feve.bin.noNA$bin_sd_biomass^-1
+
 
 # EFFECTIVE SPECIES STAB ----
 
@@ -151,43 +145,31 @@ effective.species.stab <- effective.species.stab[complete.cases(effective.specie
 
 effective.species.stab$new_bin <- as.factor(effective.species.stab$new_bin)
 
-#TAXONOMIC VS DISPERSAL DIV ----
+effective.species.stab$Z_effectivesp <- scale(effective.species.stab$bin_mean_effectivesp)
 
-###ANOVA ----
+#TAXONOMIC VS DISPERSAL DIV MERGE----
 stab.feve.species <- merge(abun.feve.bin.noNA, effective.species.stab)
 
-anova1 <- aov (bin_sd_biomass ~ bin_mean_FEve, data = stab.feve.species)
 
-anova2 <- aov (bin_sd_biomass ~ bin_mean_effectivesp, data = stab.feve.species)
-
-anova3 <- aov (bin_sd_biomass ~ bin_mean_FEve + bin_mean_effectivesp, data = stab.feve.species)
-
-anova4 <- aov (bin_sd_biomass ~ bin_mean_FEve * bin_mean_effectivesp, data = stab.feve.species)
-
-model.set <- list(anova1,anova2, anova3, anova4)
-model.names <- c("one-way-feve","one-way-spec","two way", "interaction")
-
-aictab(model.set, modnames = model.names)
-summary(anova4)
-### LM - SPDIV/FEVE BINNED change this to corr ----
+### CORR - SPDIV/FEVE BINNED change this to corr ----
 binned.effective.species.FEve <-
   merge (x = FEve.bin.mean, y = effective.species.filled.bin.mean)
 
-lm <-cor.test( ~ bin_mean_FEve + bin_mean_effectivesp,
-                             data = binned.effective.species.FEve)
+lm <-cor.test( ~ Z_FEve + Z_effectivesp,
+                             data = stab.feve.species)
 
 plot(lm)
 
 summary(lm)
-confint(lm, 'bin_mean_effectivesp', level = 0.95)
+confint(lm, level = 0.95)
 
 ##PLOT - SPDIV/FEVE BINNED ----
 #Effective species/FEve plot
 
-plot.binned.effective.species.FEve <- binned.effective.species.FEve %>%
-  ggplot(aes(x = bin_mean_effectivesp, y = bin_mean_FEve)) +
-  xlab ("Effective Species Diversity") +
-  ylab ("Dispersal Diversity") +
+plot.binned.effective.species.FEve <- stab.feve.species %>%
+  ggplot(aes(x = Z_effectivesp, y = Z_FEve)) +
+  xlab ("Taxonomic Diversity (effective species number)") +
+  ylab ("Dispersal Diversity (functional evenness)") +
   theme_light() +
   geom_point() +
   stat_smooth(method=glm)+
@@ -349,7 +331,6 @@ plot.ratechange
 #facet_wrap(~year)
 
 
-#LM MODELS----
 
 
 #have to scale the variables as they have different scales
@@ -422,90 +403,3 @@ ggplot() +
     fill = "red"
   ) +
   facet_wrap( ~ stratum)
-
-#GAM ----
-
-##GAM1 scaled variables with the NA's removed from the data ----
-gam1 <- gam(Z_sdbio ~ s(Z_FEve) ,
-            data = abun.feve.bin.noNA, method = 'REML')
-summary(gam1)
-gam.check(gam1)
-
-data_plotgam1 <-
-  ggplot(data = abun.feve.bin.noNA, aes(y = Z_sdbio, x = Z_FEve)) +
-  geom_point() +
-  geom_line(aes(y = fitted(gam1)),
-            colour = "red", size = 1.2) +
-  #geom_line(aes(y = fitted(gam2)),
-  #         colour = "blue", size = 1.2)+
-  theme_bw()
-data_plotgam1
-
-##GAM2 unscaled with a log of the dependent variable  ----
-gam2 <- gam(log(bin_sd_biomass) ~ s(bin_mean_FEve) ,
-            data = abun.feve.bin.noNA,
-            method = 'REML')
-summary(gam2)
-
-data_plotgam2 <-
-  ggplot(data = abun.feve.bin.noNA, aes(y = log(bin_sd_biomass), x = bin_mean_FEve)) +
-  geom_point() +
-  geom_line(aes(y = fitted(gam2)),
-            colour = "red", size = 1.2) +
-  #geom_line(aes(y = fitted(gam2)),
-  #         colour = "blue", size = 1.2)+
-  theme_bw()+
-  labs(title = "Marine Community Stability in Response to Dispersal Diversity") +
-  xlab("Dispersal Diversity (Functional Evenness)")+
-  ylab ("Stability (SD of Biomass) ")
-
-data_plotgam2
-## GAM3 noNA and no log ----
-#By loging the dependent varable I achieve two 'normal' distributions for my data. this gives a linear regression. Would I go back to lmms instead?
-
-gam3 <- gam(bin_sd_biomass ~ s(bin_mean_FEve) ,
-            data = abun.feve.bin.noNA,
-            method = 'REML')
-summary(gam3)
-#no different than the scaled version
-data_plotgam3 <-
-  ggplot(data = abun.feve.bin.noNA, aes(y = bin_sd_biomass, x = bin_mean_FEve)) +
-  geom_point() +
-  geom_line(aes(y = fitted(gam3)),
-            colour = "red", size = 1.2) +
-  #geom_line(aes(y = fitted(gam2)),
-  #         colour = "blue", size = 1.2)+
-  theme_bw()
-data_plotgam3
-
-AIC(gam1, gam2, gam3, gamm1)
-#visually gam1 and gam3 look very similar but with the AIC gam 1 comes out as the most predictive. Still there isnt a great fit to the data. I think this will need the mixed model or a higher k -> changing K din't work
-
-
-#GAMM ----
-gamm1 <- gam(Z_sdbio ~ s(Z_FEve) +
-               s(stratum, bs = "re") ,
-             data = abun.feve.bin.noNA,
-             method = 'REML')
-
-gamm1_summary <- summary(gamm1)
-
-gamm2 <- gam(
-  log(bin_sd_biomass) ~ bin_mean_FEve +
-    s(stratum, bs = "re", k = 12) +
-    s(new_bin, bs ="re", k = 6),
-  data = abun.feve.bin.noNA,
-  method = 'REML'
-)
-summary(gamm2)
-
-data_plotgamm2 <-
-  ggplot(data = abun.feve.bin.noNA, aes(y = log(bin_sd_biomass), x = bin_mean_FEve)) +
-  geom_point() +
-  geom_line(aes(y = fitted(gamm2)),
-            colour = "red", size = 1.2) +
-  #geom_line(aes(y = fitted(gamm1)),
-   #        colour = "blue", size = 1.2)+
-  theme_bw()
-data_plotgamm2
-

@@ -1,9 +1,17 @@
 # Install and load packages ---- 
-#istallation shouldn't be necessary again
 
+# install.packages("dplyr")
+# install.packages("tidyr")
+# install.packages("stringr")
 # install.packages("devtools")
-# install_github("vqv/ggbiplot")
+# install.packages("mltools")
+# install.packages("data.table")
+# install.packages("vegan")
+# install.packages("ade4")
+# install.packages("adespatial")
 # install.packages("reshape")
+# install.packages("skimr")
+# install.packages("sf")
 
 library(dplyr)
 library(tidyr)
@@ -18,9 +26,9 @@ library(reshape)
 library(skimr)
 library(sf)
 
-# PART ONE - TRAIT DATA ----
+# PART ONE - Trait data ----
 
-##Load/clean fish trait data----
+##Load and clean fish trait data----
 raw.fish.traits <-
   read.csv("AtlanticFishTraits.csv",
            fileEncoding = "UTF-8-BOM",
@@ -30,7 +38,8 @@ raw.fish.traits <-
 #need to cut out all the dead space after the last species, not sure why that was there but bye bye#
 fish.traits <- raw.fish.traits %>% droplevels()
 
-#Making species name the row names and shortening them - might want to remove this as it is causing problems with the visuals on the plots#
+#making species name the row names and shortening them #
+#might want to remove this as it is causing problems with the visuals on the plots#
 rownames(fish.traits) <- fish.traits[, 1]
 fish.traits[, 1] <- NULL
 
@@ -49,7 +58,7 @@ fish.traits <- fish.traits %>%
     Saltwater = abs(Saltwater)
   )
 
-##Data cleaning of unnecessary columns, such as references----
+#data cleaning of unnecessary columns, such as references#
 fish.traits <-
   select(
     fish.traits,
@@ -108,13 +117,14 @@ fish.traits <-
     )
   )
 
-#Removing rows with missing larval strategy, this is considered an important trait that needs to be available for all species
+#removing rows with missing larval strategy, this is considered an important trait# 
+#that needs to be available for all species#
 fish.traits <- fish.traits[!is.na(fish.traits$LarvalStrategy), ]
 
 #skimming data for structure
 skim.tot <- skim(fish.traits)
 
-# PART TWO - FISH ABUNDANCE DATA ----
+# PART TWO - Fish abundance data ----
 
 ##Load/clean fish abundance data----
 raw.fish.abun <-
@@ -123,10 +133,11 @@ raw.fish.abun <-
 #This takes the species list and puts it into a character#
 species_name <- raw.fish.abun$taxa_name
 
-#We are taking the character to then change the species names from all CAPS to just having the first letter in CAP, returns better data#
+#We are taking the character to then change the species names from all CAPS #
+#to just having the first letter in CAP, returns better data#
 species_name <- str_to_sentence(species_name)
 
-#Shortening the names to match
+#Shortening the names to match#
 species_name[species_name == "Myoxocephalus scorpioides"] <-
   c("Myoxocephalus scorpioides 1")
 species_name[species_name == "Myoxocephalus scorpius"] <-
@@ -151,7 +162,7 @@ rownames.fish.traits <- rownames(fish.traits)
 fish.abun.filtered <-
   fish.abun %>% filter(taxa_name %in% rownames.fish.traits)
 
-##ADUNDANCE DATA NOT FILLED ----
+## abundance data not filled ----
   # We first summarize the biomass data to get the mean biomass for each year and stratum
 fish.abun.clean <- fish.abun.filtered %>%
   #first find, for each trawl and each functional group, the total biomass of that group in that trawl
@@ -162,7 +173,7 @@ fish.abun.clean <- fish.abun.filtered %>%
   dplyr::summarize(group_biomass = mean(group_biomass)) %>%
   ungroup()
 
-##FILLING WITH ZERO ----
+## filling with zero ----
 #Needs to be filled with 0 to determine the change in biomass from year to year, when species were not detected in a year they are given an abundance of 0
 fish.abun.complete <- fish.abun.clean %>%
   #filter(year_surv == 1996)%>%
@@ -172,7 +183,7 @@ fish.abun.complete <- fish.abun.clean %>%
 #Fill data frame NA with 0
 fish.abun.complete[is.na(fish.abun.complete)] <- 0
 
-# PART THREE - STRATUM SHAPEFILE ------
+# PART THREE - Stratum shapefile ------
 
 # read all files of the shapefile
 stratum.shpfile.raw <- st_read("strata") 
@@ -205,3 +216,5 @@ stratum.shpfile.adjusted <- st_read("strata_adjusted")%>%
 stratum.depth <- st_read("stratum_depth.csv") 
 
 stratum.depth$depth.ave <- as.numeric(stratum.depth$depth.ave)
+
+#END#

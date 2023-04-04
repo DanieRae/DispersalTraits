@@ -1,7 +1,11 @@
 #DATA REQUIRED FROM PAGE 2#
 #THIS SHEET RUNS THE HEIARCHICAL CLUSTERING OF THE FISH TRAITS FOR THE THREE DIFFERENT DATA FILTERING OPTIONS ---- USED IN PAGE 5-MAPS#
 
-#Libraries----
+# Install and load packages ---- 
+
+# install.packages("cluster")
+# install.packages("gclus")
+
 library(cluster)
 library(gclus)
 
@@ -12,23 +16,6 @@ plot(fish.traits.UPGMA,hang= -1)
 fish.traits.40NA.UPGMA <- hclust(fish.traits.40NA.dist, method = "average")
 plot(fish.traits.40NA.UPGMA, hang= -1)
 
-fish.traits.60NA.UPGMA <- hclust(fish.traits.60NA.dist, method = "average")
-plot(fish.traits.60NA.UPGMA, hang= -1)
-
-
-#comparing heat map#
-
-# dend <- as.dendrogram(fish.traits.40NA.UPGMA)
-# heatmap(
-#   as.matrix(fish.traits.60NA.dist),
-#   Rowv = dend,
-#   symm = T,
-#   margin=c(3,3))
-# 
-# plot(dend)
-
-# Shameless code steal from numerical ecology in R
-
 ## Reorder clusters----
 # fish.traits.UPGMA.reordered <- reorder(fish.traits.UPGMA, fish.traits.dist)
 # plot(fish.traits.UPGMA.reordered, hang =-1, main = "Fish Dispersal Clusters", xlab = "Dispersal Trait Distances", sub = "Method:UPGMA")
@@ -36,21 +23,12 @@ plot(fish.traits.60NA.UPGMA, hang= -1)
 
 fish.traits.40NA.UPGMA.reordered <- reorder(fish.traits.40NA.UPGMA, 
                                             fish.traits.40NA.dist)
-plot(fish.traits.40NA.UPGMA.reordered, hang =-1)
 
+## Silhouette Width -----
 
-# fish.traits.60NA.UPGMA.reordered <- reorder(fish.traits.60NA.UPGMA, 
-#                                             fish.traits.60NA.dist)
-# plot(fish.traits.60NA.UPGMA.reordered, hang =-1)
+#How to determine how many clusters? Silhouette widths shows the optimum number of clusters#
 
-
-# SILHOUETTE WIDTH -------------------------------------------------------------------
-
-#How to determine how many clusters? Silhouette widths, I don't want to cluster based on width anymore, id prefer to cluster based on height. Will keep this to show that it
-
-#fish_clust <- fish.traits.UPGMA.reordered 
 fish_40clust <- fish.traits.40NA.UPGMA.reordered
-#fish_60clust <- fish.traits.60NA.UPGMA.reordered
 
 Si <- numeric(nrow(fish.traits.40NA))
 for (k in 2:(nrow(fish.traits.40NA)-1)) {
@@ -81,21 +59,9 @@ points(k.best,
        col="red",
        cex=1.5)
 
+#returns an optimum of k=37, however there is very little variation between k=25-45#
 
-#DENDOGRAMS ----
-
-# Plot reordered dendrogram with group labels
-# plot(
-#   fish.traits.60percent.UPGMC.reordered,
-#   hang = -1,
-#   xlab = "11 groups",
-#   # sub = "",
-#   # ylab = "Height",
-#   main = "Atlantic fish dispersal clusters with 90% traits",
-#   labels = cutree(fish.traits.60percent.UPGMC.reordered, k = k)
-# )
-# rect.hclust(fish.traits.60percent.UPGMC.reordered, k = k)
-# hcoplot(fish.traits.60percent.UPGMC.reordered,fish.traits.dist.60percent, k = k)
+##PLOT - Dendogram ----
 
 plot(
   fish.traits.40NA.UPGMA.reordered,
@@ -105,9 +71,9 @@ plot(
   ylab = "Height",
   main = NULL)
 
+dendogramPlot <- rect.hclust(fish.traits.40NA.UPGMA.reordered, k=25)
 
-
-rect.hclust(fish.traits.40NA.UPGMA.reordered, k=5)
+#ggsave(path = "figures", "dendogramPlot.png", dendogramPlot, width =  10, height = 10)
 
 # Plot the final dendrogram with group colors (RGBCMY...)
 # Fast method using the additional hcoplot() function:
@@ -115,8 +81,8 @@ rect.hclust(fish.traits.40NA.UPGMA.reordered, k=5)
 # source("functions/hcoplot.R")
 # hcoplot(fish.traits.40NA.UPGMA.reordered, fish.traits.40NA.dist, k = 25)
 
-#DATA MANIPULATION ----
-##ADD CLUSTER ID TO TRAIT DATA----
+
+###ADD CLUSTER ID TO TRAIT DATA----
 
 cutree <- cutree(fish.traits.40NA.UPGMA.reordered, k =25)
 
@@ -125,27 +91,10 @@ fish.traits.40NA.clust <- cbind(fish.traits.40NA, clusterID = cutree)
 fish.traits.40NA.clust$clusterID <- as.factor(fish.traits.40NA.clust $clusterID)
 
 #Write to CSV to determine what traits define each group
-write.csv(fish.traits.40NA.clust,"C:\\Users\\Danielle\\Documents\\Graduate school\\Master Thesis\\FishTraitsClustered25GR.csv", row.names = TRUE)
+write.csv(fish.traits.40NA.clust,"C:\\Users\\danie\\OneDrive\\Documents\\Graduate School\\Master Thesis\\Fish Traits Clustered\\FishTraitsClustered25GR.csv", row.names = TRUE)
 
-###CLUST W 5 groups ----
-cutree5 <- cutree(fish.traits.40NA.UPGMA.reordered, k =5)
 
-fish.traits.40NA.clust5 <- cbind(fish.traits.40NA, clusterID = cutree5)
-
-fish.traits.40NA.clust5$clusterID <- as.factor(fish.traits.40NA.clust5 $clusterID)
-
-#Write to CSV to determine what traits define each group
-write.csv(fish.traits.40NA.clust5,"C:\\Users\\Danielle\\Documents\\Graduate school\\Master Thesis\\FishTraitsClustered8GR.csv", row.names = TRUE)
-
-#Repeat for clusters with 40% data
-
-# cutree <- cutree(fish.traits.60NA.UPGMA.reordered, k =25)
-# 
-# fish.traits.60NA.clust <- cbind(fish.traits.60NA, clusterID = cutree)
-# 
-# fish.traits.60NA.clust $clusterID <- as.factor(fish.traits.60NA.clust $clusterID)
-
-##ADD CLUSTER ID TO ABUND DATA ----
+###ADD CLUSTER ID TO ABUND DATA ----
 ##Lets add the cluster IDs to the abundance data. Seems like it could be useful
 
 clust.ID <- select (fish.traits.40NA.clust, c ("clusterID"))

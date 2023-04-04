@@ -63,7 +63,7 @@ bound <- spm_as_boundary(stratum.shpfile.spdiv.combined,
 
 #Val written model with spm, using predctor variable that is not easily accepted by spm 
 dataset_smoothed <- dataset_spdiv %>%  
-  spm_smooth(bin_sd_biomass ~ bin_mean_effectivesp + smooth_space(bs = "mrf"),
+  spm_smooth(bin_sd_biomass ~ Z_effectivesp + smooth_space(bs = "mrf"),
              boundaries = bound, 
              family = Gamma(link="log"),
              predict = FALSE)
@@ -84,7 +84,7 @@ stratum.spdiv.mut <- stratum.spdiv %>%
 #MODEL ----
 gam.stability.spdiv <- 
   gam(
-    log(bin_sd_biomass) ~ bin_mean_effectivesp + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 200) ,
+    log((bin_sd_biomass)^-1) ~ Z_effectivesp + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 200) ,
     data = stratum.spdiv.mut,
     method = "REML",
     type = "terms",
@@ -98,27 +98,29 @@ plot(gam.stability.spdiv)
 ##ERICS CODE ----
 summary(gam.stability.spdiv)
 term_predictors.spdiv <- predict(gam.stability.spdiv, type ="terms", se.fit = TRUE)
-disperse_div_fit_spdiv <- as.vector(term_predictors.spdiv$fit[,"bin_mean_effectivesp"]) #the as.vector part is just to make sure this is a vector, and not a 1D matrix, for plotting.
+disperse_div_fit_spdiv <- as.vector(term_predictors.spdiv$fit[,"Z_effectivesp"]) #the as.vector part is just to make sure this is a vector, and not a 1D matrix, for plotting.
 
 disperse_intercept_spdiv <- as.vector(attr(term_predictors.spdiv,"const")) #like this because the intercept is a single number, so it's just stored with the predicted values as a constant
 disperse_div_fit_spdiv <- disperse_div_fit_spdiv + disperse_intercept_spdiv
 
 #Confidence Int
-disp_div_se_spdiv <- as.vector(term_predictors.spdiv$se.fit[,"bin_mean_effectivesp"])
+disp_div_se_spdiv <- as.vector(term_predictors.spdiv$se.fit[,"Z_effectivesp"])
 
 ##PLOT GAM ----
 dataset_smoothed_plot_spdiv <-
-  ggplot(data = stratum.spdiv.mut, aes(y = log(bin_sd_biomass), x = bin_mean_effectivesp)) +
+  ggplot(data = stratum.spdiv.mut, aes(y = log((bin_sd_biomass)^-1), x = Z_effectivesp)) +
   geom_point() +
   geom_line(aes(y = disperse_div_fit_spdiv),
-            colour = "red", size = 1.2) +
+            colour = "blue", size = 1.2) +
   geom_ribbon(aes(ymin=disperse_div_fit_spdiv - 1.96*disp_div_se_spdiv,
                   ymax=disperse_div_fit_spdiv + 1.96*disp_div_se_spdiv),
-              fill="red", alpha= 0.2)+
+              fill="blue", alpha= 0.2)+
   theme_bw() +
-  xlab("Taxonomic Diversity (effective species number)")+
+  xlab("Taxonomic Diversity (z-score scaled)")+
   theme(axis.title.y = element_blank(),
-        axis.title.x = element_text(size = 15, face = "bold"))
+        axis.title.x = element_text(size = 25, face = "bold"),
+        axis.text.x = element_text (size = 15),
+        axis.text.y = element_text (size = 15))
 
 dataset_smoothed_plot_spdiv
 
@@ -127,12 +129,8 @@ stabilitymaps <- dataset_smoothed_plot + dataset_smoothed_plot_spdiv
 ggsave("stabilitymaps.png",
        stabilitymaps,
        height = 10,
-       width = 15)
+       width = 20)
 
 
-##ANOVA GAMS
 
-AIC(gam.stability.spdiv,gam.stability)
 
-logLik(gam.stability.spdiv)
-logLik(gam.stability)

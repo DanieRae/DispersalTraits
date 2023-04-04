@@ -1,5 +1,11 @@
 #LIBRARIES ----
+# install.packages("devtools")
+devtools::install_github("pedersen-fisheries-lab/sspm")
+# if you wish to build the vignettes:
+devtools::install_github("pedersen-fisheries-lab/sspm", build_vignettes = TRUE)
+
 library(sspm)
+
 
 # Make SSPM model ----
 
@@ -64,7 +70,7 @@ bound <- spm_as_boundary(stratum.shpfile.abun.combined,
 
 #Val written model with spm, using predctor variable that is not easily accepted by spm 
 dataset_smoothed <- dataset %>%  
-  spm_smooth(bin_sd_biomass ~ bin_mean_FEve + smooth_space(bs = "mrf"),
+  spm_smooth(inverse_sd ~ Z_FEve + smooth_space(bs = "mrf"),
              boundaries = bound, 
              family = Gamma(link="log"),
              predict = FALSE)
@@ -85,7 +91,7 @@ stratum.abun.mut <- stratum.abun %>%
 #MODEL ----
 gam.stability <- 
   gam(
-    log(bin_sd_biomass) ~ bin_mean_FEve + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 200),
+    log((bin_sd_biomass)^-1) ~ Z_FEve + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 200),
     data = stratum.abun.mut,
     method = "REML",
     type = "terms",
@@ -99,17 +105,17 @@ plot(gam.stability)
 ##ERICS CODE ----
 summary(gam.stability)
 term_predictors <- predict(gam.stability, type ="terms", se.fit = TRUE)
-disperse_div_fit <- as.vector(term_predictors$fit[,"bin_mean_FEve"]) #the as.vector part is just to make sure this is a vector, and not a 1D matrix, for plotting.
+disperse_div_fit <- as.vector(term_predictors$fit[,"Z_FEve"]) #the as.vector part is just to make sure this is a vector, and not a 1D matrix, for plotting.
 
 disperse_intercept <- as.vector(attr(term_predictors,"const")) #like this because the intercept is a single number, so it's just stored with the predicted values as a constant
 disperse_div_fit <- disperse_div_fit + disperse_intercept
 
 #Confidence Int
-disp_div_se <- as.vector(term_predictors$se.fit[,"bin_mean_FEve"])
+disp_div_se <- as.vector(term_predictors$se.fit[,"Z_FEve"])
 
 ##PLOT GAM ----
 dataset_smoothed_plot <-
-  ggplot(data = stratum.abun.mut, aes(y = log(bin_sd_biomass), x = bin_mean_FEve)) +
+  ggplot(data = stratum.abun.mut, aes(y = log((bin_sd_biomass)^-1), x = Z_FEve)) +
   geom_point() +
   geom_line(aes(y = disperse_div_fit),
             colour = "red", size = 1.2) +
@@ -117,10 +123,12 @@ dataset_smoothed_plot <-
                   ymax=disperse_div_fit + 1.96*disp_div_se),
               fill="red", alpha= 0.2)+
   theme_bw()+
-  xlab("Dispersal Diversity (functional evenness)")+
-  ylab ("Stability (temporal change in biomass)")+
-  theme(axis.title.x = element_text(size = 15,face = "bold"),
-        axis.title.y = element_text(size = 15, face = "bold"))
+  xlab("Dispersal Diversity (z-score scaled)")+
+  ylab ("Stability")+
+  theme(axis.title.x = element_text(size = 25,face = "bold"),
+        axis.title.y = element_text(size = 25, face = "bold"),
+        axis.text.x = element_text (size = 15),
+        axis.text.y = element_text (size = 15))
 
 dataset_smoothed_plot
 # 
