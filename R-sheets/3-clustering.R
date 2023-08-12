@@ -10,9 +10,6 @@ library(cluster)
 library(gclus)
 
 #Cluster using UPGMA----
-fish.traits.UPGMA <- hclust(fish.traits.dist, method = "average")
-plot(fish.traits.UPGMA,hang= -1)
-
 fish.traits.40NA.UPGMA <- hclust(fish.traits.40NA.dist, method = "average")
 plot(fish.traits.40NA.UPGMA, hang= -1)
 

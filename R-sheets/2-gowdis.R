@@ -24,30 +24,17 @@ fish.traits.40NA <- fish.traits[, fish.traits.40Nas.columns]
 #SKIM DATA STRUC #
 skim.40 <- skim(fish.traits.40NA)
 
-#60NA ----
-# Identify which columns have less than 60 NAs
-fish.traits.60NA.column<- names(fish.traits.NAs[fish.traits.NAs <= 58])
-
-fish.traits.60NA <- fish.traits[, fish.traits.60NA.column]
-
-skim.60 <- skim(fish.traits.60NA)
-
 #GOWERS MATRIX ----
 #FD package is suppose to be able to use many different data types
 # Calculate the distance matrix using Gower coefficient (S15 in numerical ecology book
 # page 297)
 #
-fish.traits.dist <- gowdis(fish.traits, asym.bin = NULL)
 
 fish.traits.40NA.dist <- gowdis(fish.traits.40NA, asym.bin = NULL)
-
-fish.traits.60NA.dist <- gowdis(fish.traits.60NA, asym.bin = NULL)
 
 #ONEHOT----
 
 fish.traits.40NA.hot <- one_hot(as.data.table(fish.traits.40NA))
 fish.traits.40NA.hot.dist <-gowdis(fish.traits.40NA.hot, asym.bin = NULL)
 
-fish.traits.60NA.hot <- one_hot(as.data.table(fish.traits.60NA))
-fish.traits.60NA.hot.dist <-gowdis(fish.traits.60NA.hot, asym.bin = NULL)
 

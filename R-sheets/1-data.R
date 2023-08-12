@@ -72,6 +72,8 @@ fish.traits <-
       "Atlantic..Northwest",
       "Common",
       "DemersPelagRef",
+      "Mobility",
+      "Saltwater",
       "MigratRef",
       "DepthRangeRef",
       "DepthComRef",

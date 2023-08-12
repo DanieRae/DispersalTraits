@@ -3,10 +3,8 @@
 #NOTE PCOA two function produce similar plots, cmdscale has open circles and pcoa uses the species names#
 
 # Install and load packages ---- 
-# install_github("vqv/ggbiplot")
 # install.packages("ggplot2")
 
-#library(ggbiplot)
 library(ggplot2)
 
 # CMDSCALE - PCoA ----
@@ -110,22 +108,3 @@ PCOAplot <- PCOA.plot + geom_segment(
 
 ggsave(path = "figures", "PCOAplot.png", PCOAplot, width =  10, height = 10)
 
-
-# Biplot with pcoa method using lingoes correction ----------------------------------------
-
-
-fish.pcoa <- pcoa(fish.traits.40NA.dist, correction = "lingoes")
-
-numeric_columns_id <- attributes(fish.traits.40NA.dist)$Types == "C"
-
-
-# biplot.pcoa(fish.pcoa, scale(fish.traits.60percent))
-# abline(h=0, lty=3)
-# abline(v=0, lty=3)
-
-hot.dist.pcoa <-
-  pcoa(fish.traits.40NA.hot.dist, correction = "lingoes")
-
-biplot.pcoa(hot.dist.pcoa, scale(fish.traits.40NA.hot))
-abline(h = 0, lty = 3)
-abline(v = 0, lty = 3)

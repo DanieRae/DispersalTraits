@@ -1,4 +1,4 @@
-### Running the functional divresity indicies 
+### Running the functional diversity indices 
 library(FD)
 
 ##ABUNDANCE DATA WRANGLING ----

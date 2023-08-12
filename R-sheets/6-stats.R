@@ -1,6 +1,26 @@
 #Statistics and response variables#
 
-#Packages----
+# Install and load packages ----
+
+# install.packages("grid")
+# install.packages("gridExtra")
+# install.packages("lme4")
+# install.packages("sjPlot")
+# install.packages("FD")
+# install.packages("sf")
+# install.packages("ggplot2")
+# install.packages("ggforce")
+# install.packages("patchwork")
+# install.packages("dplyr")
+# install.packages("stringr")
+# install.packages("rgdal")
+# install.packages("rgeos")
+# install.packages("proj4")
+# install.packages("spdep")
+# install.packages("mgcv")
+# install.packages("viridis")
+# install.packages("AICcmodavg")
+
 library(grid)
 library(gridExtra)
 library(lme4)
@@ -157,14 +177,11 @@ binned.effective.species.FEve <-
 
 lm <-cor.test( ~ Z_FEve + Z_effectivesp,
                              data = stab.feve.species)
-
-plot(lm)
-
+#returns the 95% confidence of the pearc. corr test between the two variables#
 summary(lm)
-confint(lm, level = 0.95)
 
 ##PLOT - SPDIV/FEVE BINNED ----
-#Effective species/FEve plot
+#Effective species/FEve pearson correlation plot
 
 plot.binned.effective.species.FEve <- stab.feve.species %>%
   ggplot(aes(x = Z_effectivesp, y = Z_FEve)) +

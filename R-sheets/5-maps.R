@@ -1,6 +1,16 @@
 #DATA FROM PAGE 2 AND PAGE 3#
 #THIS PAGE RUNS ALL THE DIFFERENT MAPS USED TO VISUALIZE SPATIOTEMPOTAL PATTERNS#
-# LIBRARIES ----
+
+# Install and load packages ---- 
+# install.packages("sf")
+# install.packages("ggplot2")
+# install.packages("ggforce")
+# install.packages("patchwork")
+# install.packages("dplyr")
+# install.packages("stringr")
+# install.packages("cmocean")
+# install.packages("tmap")
+
 library(sf)
 library(ggplot2)
 library(ggforce)
@@ -8,10 +18,10 @@ library(patchwork)
 library(dplyr)
 library(stringr)
 library(cmocean)
-#library(tmap)
+library(tmap)
 
 
-#STRATUM DEPTH----
+#STRATUM DEPTH MAP----
 
 stratum.depth.geom <-
    merge (x = stratum.shpfile, y = stratum.depth, by = "stratum") %>%
