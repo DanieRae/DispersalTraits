@@ -5,3 +5,5 @@
 ^Dockerfile$
 ^render-in-docker\.yaml$
 analysis
+^README\.Rmd$
+^README-.*\.png$

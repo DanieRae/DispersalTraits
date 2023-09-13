@@ -1,0 +1,16 @@
+Package: DispersalTraits
+Title: DispersalTraits
+Version: 0.0.0.9000
+Authors@R:
+    person("Danielle", "McRae", "", role = c("aut", "cre"),
+    person("Valentin", "Lucet", "valentin.lucet@gmail.com", role = c("ctb"))
+Description: DispersalTraits
+License: MIT + file LICENSE
+ByteCompile: true
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports: here
+Suggests: devtools,
+    git2r
