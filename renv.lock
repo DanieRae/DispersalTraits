@@ -141,16 +141,6 @@
       ],
       "Hash": "7b9c8316893ed2eec96f15224fd43d0d"
     },
-    "RTriangle": {
-      "Package": "RTriangle",
-      "Version": "1.6-0.12",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R"
-      ],
-      "Hash": "16ec95cc4daa123bb7fd4a0ba26dae56"
-    },
     "Rcpp": {
       "Package": "Rcpp",
       "Version": "1.0.11",
@@ -509,18 +499,6 @@
         "utils"
       ],
       "Hash": "9b2191ede20fa29828139b9900922e51"
-    },
-    "checkmate": {
-      "Package": "checkmate",
-      "Version": "2.2.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "backports",
-        "utils"
-      ],
-      "Hash": "ca9c113196136f4a9ca9ce6079c2c99e"
     },
     "class": {
       "Package": "class",
@@ -1156,6 +1134,18 @@
       ],
       "Hash": "03533b1c875028233598f848fda44c4c"
     },
+    "git2r": {
+      "Package": "git2r",
+      "Version": "0.32.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "graphics",
+        "utils"
+      ],
+      "Hash": "1882d7a76fd8c14b2322865f74c9a348"
+    },
     "gitcreds": {
       "Package": "gitcreds",
       "Version": "0.1.2",
@@ -1205,6 +1195,16 @@
         "rlang"
       ],
       "Hash": "b29cf3031f49b04ab9c852c912547eef"
+    },
+    "here": {
+      "Package": "here",
+      "Version": "1.0.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "rprojroot"
+      ],
+      "Hash": "24b224366f9c2e7534d2344d10d59211"
     },
     "highr": {
       "Package": "highr",
@@ -1343,16 +1343,16 @@
     },
     "insight": {
       "Package": "insight",
-      "Version": "0.19.4",
+      "Version": "0.19.5",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "methods",
         "stats",
         "utils"
       ],
-      "Hash": "1b37026fce412d65f1a0ad2a62d4476e"
+      "Hash": "96a7b5c69fd0bce9f1049b779458c2ff"
     },
     "interp": {
       "Package": "interp",
@@ -1623,10 +1623,10 @@
     },
     "lpSolve": {
       "Package": "lpSolve",
-      "Version": "5.6.18",
+      "Version": "5.6.19",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "12c7a918599d5700e4265dd8a21f684f"
+      "Hash": "1dde7a359a18e255a35e0ae09d034be9"
     },
     "lwgeom": {
       "Package": "lwgeom",
@@ -2767,36 +2767,6 @@
         "utils"
       ],
       "Hash": "e155cf507897a25ea568ee451fb1cdc9"
-    },
-    "sspm": {
-      "Package": "sspm",
-      "Version": "1.0.0",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "sspm",
-      "RemoteUsername": "pedersen-fisheries-lab",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "3138493683625c5be520b48d07c02f6ceff91acc",
-      "Requirements": [
-        "R",
-        "RTriangle",
-        "checkmate",
-        "cli",
-        "dplyr",
-        "magrittr",
-        "methods",
-        "mgcv",
-        "purrr",
-        "rlang",
-        "sf",
-        "stats",
-        "stringr",
-        "tibble",
-        "tidyr",
-        "units"
-      ],
-      "Hash": "25393a7c1f80f059871b70d7f31991c2"
     },
     "stars": {
       "Package": "stars",
