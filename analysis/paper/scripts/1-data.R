@@ -1,4 +1,4 @@
-# Install and load packages ---- 
+# Install and load packages ----
 
 # install.packages("dplyr")
 # install.packages("tidyr")
@@ -25,12 +25,14 @@ library(adespatial)
 library(reshape)
 library(skimr)
 library(sf)
+library(here)
 
 # PART ONE - Trait data ----
 
 ##Load and clean fish trait data----
 raw.fish.traits <-
-  read.csv("AtlanticFishTraits.csv",
+  read.csv(here("analysis", "data", "raw_data", "tabular",
+                "AtlanticFishTraits.csv"),
            fileEncoding = "UTF-8-BOM",
            stringsAsFactors = TRUE)
 
@@ -62,7 +64,7 @@ fish.traits <- fish.traits %>%
 fish.traits <-
   select(
     fish.traits,
-    -c (
+    -c(
       "Genus",
       "Subfamily",
       "Family",
@@ -119,7 +121,7 @@ fish.traits <-
     )
   )
 
-#removing rows with missing larval strategy, this is considered an important trait# 
+#removing rows with missing larval strategy, this is considered an important trait#
 #that needs to be available for all species#
 fish.traits <- fish.traits[!is.na(fish.traits$LarvalStrategy), ]
 
@@ -130,7 +132,8 @@ skim.tot <- skim(fish.traits)
 
 ##Load/clean fish abundance data----
 raw.fish.abun <-
-  read.csv("NL_Biomass.csv", fileEncoding = "UTF-8-BOM")
+  read.csv(here("analysis", "data", "raw_data", "tabular",
+                "NL_Biomass.csv"), fileEncoding = "UTF-8-BOM")
 
 #This takes the species list and puts it into a character#
 species_name <- raw.fish.abun$taxa_name
@@ -150,7 +153,7 @@ new_species_name <-
   unlist(lapply(lapply(str_split(species_name, " "),
                        FUN = str_sub, 1, 3), paste0, collapse = "_"))
 
-fish.abun <- select(raw.fish.abun,-c ("taxa_name"))
+fish.abun <- select(raw.fish.abun, -c("taxa_name"))
 
 fish.abun <- cbind(fish.abun, taxa_name = new_species_name)
 
@@ -165,7 +168,7 @@ fish.abun.filtered <-
   fish.abun %>% filter(taxa_name %in% rownames.fish.traits)
 
 ## abundance data not filled ----
-  # We first summarize the biomass data to get the mean biomass for each year and stratum
+# We first summarize the biomass data to get the mean biomass for each year and stratum
 fish.abun.clean <- fish.abun.filtered %>%
   #first find, for each trawl and each functional group, the total biomass of that group in that trawl
   group_by(stratum, year_surv, vessel, trip, set, taxa_name) %>%
@@ -188,7 +191,8 @@ fish.abun.complete[is.na(fish.abun.complete)] <- 0
 # PART THREE - Stratum shapefile ------
 
 # read all files of the shapefile
-stratum.shpfile.raw <- st_read("strata") 
+stratum.shpfile.raw <- st_read(here("analysis", "data", "raw_data", "spatial",
+                                    "strata"))
 
 #strata geometry, this joins the multiple polygons
 stratum.shpfile <- stratum.shpfile.raw %>%
@@ -197,25 +201,27 @@ stratum.shpfile <- stratum.shpfile.raw %>%
   dplyr::mutate(stratum_id_base = str_sub(stratum, 1, 3)) %>%
   group_by(DIV,stratum_id_base) %>%
   dplyr::summarise(geometry = st_union(geometry)) %>%
-  dplyr::rename(stratum = stratum_id_base)%>%
-  filter(DIV != "2H", DIV != "2G")%>%
-  filter(stratum !=613, stratum !=776, stratum !=777, stratum !=778)
+  dplyr::rename(stratum = stratum_id_base) %>%
+  filter(DIV != "2H", DIV != "2G") %>%
+  filter(stratum != 613, stratum != 776, stratum != 777, stratum != 778)
 
 #need to filter the adjusted strata, this will be used for the MRF on page 7
 strata.keep <- stratum.shpfile$stratum
 
 #this adjusted strata has been altered so that the margins of neighboring strata properly connect, to be used for the MRF
-stratum.shpfile.adjusted <- st_read("strata_adjusted")%>%
+stratum.shpfile.adjusted <- st_read(here("analysis", "data", "derived_data", "spatial",
+                                         "strata_adjusted")) %>%
   # Validating geometries to make operations on them
   st_make_valid() %>%
   dplyr::mutate(stratum_id_base = str_sub(stratum, 1, 3)) %>%
   group_by(stratum_id_base) %>%
   dplyr::summarise(geometry = st_union(geometry)) %>%
-  dplyr::rename(stratum = stratum_id_base)%>%
+  dplyr::rename(stratum = stratum_id_base) %>%
   filter(stratum %in% strata.keep)
 
 ##Stratum Depth  ----
-stratum.depth <- st_read("stratum_depth.csv") 
+stratum.depth <- read.csv(here("analysis", "data", "raw_data", "tabular",
+                               "stratum_depth.csv"))
 
 stratum.depth$depth.ave <- as.numeric(stratum.depth$depth.ave)
 
