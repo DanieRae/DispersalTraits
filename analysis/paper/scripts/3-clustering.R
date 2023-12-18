@@ -8,6 +8,7 @@
 
 library(cluster)
 library(gclus)
+library(here)
 
 #Cluster using UPGMA----
 fish.traits.40NA.UPGMA <- hclust(fish.traits.40NA.dist, method = "average")
@@ -88,7 +89,9 @@ fish.traits.40NA.clust <- cbind(fish.traits.40NA, clusterID = cutree)
 fish.traits.40NA.clust$clusterID <- as.factor(fish.traits.40NA.clust$clusterID)
 
 #Write to CSV to determine what traits define each group
-write.csv(fish.traits.40NA.clust,"C:\\Users\\danie\\OneDrive\\Documents\\Graduate School\\Master Thesis\\Fish Traits Clustered\\FishTraitsClustered25GR.csv", row.names = TRUE)
+write.csv(fish.traits.40NA.clust,
+          here("analysis","data","derived_data", "FishTraitsClustered25GR.csv"),
+          row.names = TRUE)
 
 
 ###ADD CLUSTER ID TO ABUND DATA ----
