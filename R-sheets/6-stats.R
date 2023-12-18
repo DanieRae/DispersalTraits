@@ -40,11 +40,14 @@ library(mgcv)
 library(viridis)
 library(AICcmodavg)
 
-#FD LOAD --------
+# PART ONE - FD Load --------
+##produced in sheet 6.1-FD
 
 functional.diversity<- readRDS("FunctionalDiv.rds")
 
-##FEVE ----
+##FEve ----
+##using the fish biomass data we can extract the correct stratum and survey years to attach to the functional evenness diversity metric 
+
 abun.fish.wide <-
   as.data.table (spread(fish.abun.complete, taxa_name, group_biomass))
 
@@ -60,8 +63,9 @@ FEve.comm <-
 FEve.comm <- as.data.frame(FEve.comm)
 
 
-#YEAR BINS ----
-#5 year averages for biomass, FEve, and effective species
+# PART TWO - Year bins ----
+#5 year averages for biomass, FEve, and taxonomic diversity as effective species
+
 tags <-
   c("1995-1999",
     "2000-2004",
@@ -69,8 +73,8 @@ tags <-
     "2010-2014",
     "2015-2017")
 
-##STABILITY ----
-#mean and sd of biomass per bin
+##Biomass stability ----
+#mean and sd of biomass per year bin
 
 ##TOTAL BIOMASS per strata/year
 fish.abun.strata <- fish.abun.complete %>%
@@ -102,8 +106,8 @@ abun.bin.sd <- abun.bin %>%
 abun.bin.biomass <- merge(abun.bin.mean, abun.bin.sd)
 
   
-##DISPERSAL DIVERSITY ---- 
-#mean 
+##Dispersal Diversity ---- 
+#mean of FEve for each 5 year bin
 
 FEve.bin <- FEve.comm %>%
   mutate(
@@ -122,7 +126,9 @@ FEve.bin.mean <- FEve.bin %>%
   dplyr::summarize(bin_mean_FEve = mean(V1))
 
 
-## EFFECTIVE SPECIES DIVERSITY ----
+## Taxonomic diversity ----
+#mean of effective sp. numb. for each 5 year bin
+
 effective.species.filled <- fish.abun.complete  %>%
   #calculate the Hill number for each stratum in each year
   group_by(stratum, year_surv) %>%
@@ -143,7 +149,11 @@ effective.species.filled.bin.mean <- effective.species.filled.bin %>%
   group_by(stratum, new_bin) %>%
   dplyr::summarize(bin_mean_effectivesp = mean(effective_species))
 
-#DISPERSAL AND STAB ----
+# PART THREE - Merging Data ----
+
+## Dispersal Div. with Biomass stability ----
+#merge the two data sets
+
 abun.feve.bin <- merge (FEve.bin.mean,  abun.bin.sd)
 abun.feve.bin$new_bin <- as.factor(abun.feve.bin$new_bin)
 abun.feve.bin$stratum <- as.factor(abun.feve.bin$stratum)
@@ -154,10 +164,13 @@ abun.feve.bin.noNA <- abun.feve.bin[complete.cases(abun.feve.bin), ]
 
 #have to scale the variables as they have different scales
 abun.feve.bin.noNA$Z_FEve <- scale(abun.feve.bin.noNA$bin_mean_FEve)
+
+#take the inverse of the biomass standard deviation
 abun.feve.bin.noNA$inverse_sd <- abun.feve.bin.noNA$bin_sd_biomass^-1
 
 
-# EFFECTIVE SPECIES STAB ----
+## Taxonomic Div. and Biomass Stability ----
+#merge the two data sets
 
 effective.species.stab <- merge(effective.species.filled.bin.mean, abun.bin.sd)
 
@@ -177,7 +190,7 @@ binned.effective.species.FEve <-
 
 lm <-cor.test( ~ Z_FEve + Z_effectivesp,
                              data = stab.feve.species)
-#returns the 95% confidence of the pearc. corr test between the two variables#
+#returns the 95% confidence of the pears. corr test between the two variables#
 summary(lm)
 
 ##PLOT - SPDIV/FEVE BINNED ----

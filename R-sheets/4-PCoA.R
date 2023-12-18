@@ -106,5 +106,5 @@ PCOAplot <- PCOA.plot + geom_segment(
         colour = "black"
   )
 
-ggsave(path = "figures", "PCOAplot.png", PCOAplot, width =  10, height = 10)
+#ggsave(path = "figures", "PCOAplot.png", PCOAplot, width =  10, height = 10)
 

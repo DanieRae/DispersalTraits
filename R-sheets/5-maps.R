@@ -19,6 +19,8 @@ library(dplyr)
 library(stringr)
 library(cmocean)
 library(tmap)
+library(vegan)
+library(tidyr)
 
 
 #STRATUM DEPTH MAP----
@@ -47,7 +49,7 @@ map.depth <- stratum.depth.geom %>%
         legend.text = element_text(face = "bold"))
 
 map.depth 
-ggsave("StratumDepth.png", map.depth, width =  10, height = 10)
+#ggsave("StratumDepth.png", map.depth, width =  10, height = 10)
  
 
 
@@ -151,10 +153,10 @@ map3 <- effective.dispersal.strata %>%
 
 map.diversity <- map2 / map3
 
-ggsave("Taxonomic-DispersalGroup.png",
-       map.diversity,
-       width =  12,
-       height = 10)
+# ggsave("Taxonomic-DispersalGroup.png",
+#        map.diversity,
+#        width =  12,
+#        height = 10)
 
 # BETA DIVERSITY ----
 

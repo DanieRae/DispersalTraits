@@ -14,9 +14,6 @@ fish.traits.40NA.UPGMA <- hclust(fish.traits.40NA.dist, method = "average")
 plot(fish.traits.40NA.UPGMA, hang= -1)
 
 ## Reorder clusters----
-# fish.traits.UPGMA.reordered <- reorder(fish.traits.UPGMA, fish.traits.dist)
-# plot(fish.traits.UPGMA.reordered, hang =-1, main = "Fish Dispersal Clusters", xlab = "Dispersal Trait Distances", sub = "Method:UPGMA")
-
 
 fish.traits.40NA.UPGMA.reordered <- reorder(fish.traits.40NA.UPGMA, 
                                             fish.traits.40NA.dist)
