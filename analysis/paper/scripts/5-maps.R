@@ -1,7 +1,7 @@
 #DATA FROM PAGE 2 AND PAGE 3#
 #THIS PAGE RUNS ALL THE DIFFERENT MAPS USED TO VISUALIZE SPATIOTEMPOTAL PATTERNS#
 
-# Install and load packages ---- 
+# Install and load packages ----
 # install.packages("sf")
 # install.packages("ggplot2")
 # install.packages("ggforce")
@@ -38,17 +38,18 @@ map.depth <- stratum.depth.geom %>%
   labs(fill = "Depth (m)", colour = "") + # legend titles
   theme(plot.title = element_text(lineheight = .8, size = 15, hjust = 0.2), # title
         axis.text.x = element_text(color = "black", size = 12), # remove x axis labels
-        axis.text.y = element_text(color = "black", size = 12), # remove y axis labels  
+        axis.text.y = element_text(color = "black", size = 12), # remove y axis labels
         #axis.ticks = element_blank(), # remove axis ticks
-        panel.grid.major = element_blank(), 
+        panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), # remove grid lines
         legend.position = "bottom",
         legend.key.size = unit(0.5, 'cm'),
         legend.text = element_text(face = "bold"))
 
-map.depth 
-ggsave("StratumDepth.png", map.depth, width =  10, height = 10)
- 
+map.depth
+ggsave(here("analysis", "figures", "StratumDepth.png"),
+       map.depth, width =  10, height = 10)
+
 
 
 #EFFECTIVE DISPERSAL DIVERSITY ####
@@ -102,18 +103,18 @@ map2 <- effective.species.strata %>%
           color = NA) +
   #coord_sf (xlim = c(-61, -46), ylim = c(42.5, 56)) +
   labs() +
-  scale_fill_viridis_c (option = "magma") +
+  scale_fill_viridis_c(option = "magma") +
   theme_light() +
-  facet_wrap(~ year_surv, ncol = 5)+
+  facet_wrap(~ year_surv, ncol = 5) +
   labs(fill = "Taxonomic Diversity", colour = "") + # legend titles
   theme(plot.title = element_text(lineheight = .8, size = 15, hjust = 0.2), # title
         axis.text.x = element_blank(), # remove x axis labels
-        #axis.text.y = element_blank(), # remove y axis labels  
+        #axis.text.y = element_blank(), # remove y axis labels
         axis.ticks = element_blank(), # remove axis ticks
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(), # remove grid lines
-        strip.text.x = element_text(size=14,vjust=0, face = "bold",
-                                    family="Arial Narrow"),
-        legend.position="bottom",
+        strip.text.x = element_text(size = 14,vjust = 0, face = "bold",
+                                    family = "Arial Narrow"),
+        legend.position = "bottom",
         legend.key.size = unit(0.8, 'cm'))
 #ggforce::facet_wrap_paginate(~year_surv,
 # nrow = 2, ncol = 2, page = 2)
@@ -127,23 +128,23 @@ map2 <- effective.species.strata %>%
 map3 <- effective.dispersal.strata %>%
   filter(year_surv %in% c(1995, 2000, 2005,2010,2015)) %>%
   ggplot() +
-  geom_sf(aes(fill = effective_species), 
+  geom_sf(aes(fill = effective_species),
           color = NA) + #This removed the boarders for the strata, can use size =0.01 to make boarders as samll as possible
   #ggtitle() +
-  scale_fill_viridis_c () +
+  scale_fill_viridis_c() +
   theme_light() +
-  facet_wrap(~ year_surv, ncol = 5)+
+  facet_wrap(~ year_surv, ncol = 5) +
   labs(fill = "Dispersal Group Diversity", colour = "") + # legend titles
   theme(plot.title = element_text(lineheight = .8, size = 15, hjust = 0.2), # title
         axis.text.x = element_blank(), # remove x axis labels
-        #axis.text.y = element_blank(), # remove y axis labels  
+        #axis.text.y = element_blank(), # remove y axis labels
         axis.ticks = element_blank(), # remove axis ticks
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(), # remove grid lines
-        strip.text.x = element_text(size=14,vjust=0, face = "bold",
-                                    family="Arial Narrow"),
+        strip.text.x = element_text(size = 14,vjust = 0, face = "bold",
+                                    family = "Arial Narrow"),
         legend.position = "bottom",
         legend.key.size = unit(0.8, 'cm'))
-# 
+#
 # ggsave("Spatiotemporal Variation in Effective Dispersal Diversity.png",
 #        map3,
 #        width =  10,
@@ -151,7 +152,7 @@ map3 <- effective.dispersal.strata %>%
 
 map.diversity <- map2 / map3
 
-ggsave("Taxonomic-DispersalGroup.png",
+ggsave(here("analysis", "figures", "Taxonomic-DispersalGroup.png"),
        map.diversity,
        width =  12,
        height = 10)
@@ -268,14 +269,14 @@ beta.map.Disp.GR <- fish.beta.FD.df.full.joined %>%
     x = "Longitude",
     y = "Latitude"
   ) +
-  scale_fill_viridis_c () +
-  theme_light()+
+  scale_fill_viridis_c() +
+  theme_light() +
   theme(plot.title = element_text(lineheight = .8, size = 15), # title
         #axis.text.x = element_blank(), # remove x axis labels
-        #axis.text.y = element_blank(), # remove y axis labels  
+        #axis.text.y = element_blank(), # remove y axis labels
         axis.ticks = element_blank(), # remove axis ticks
         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-  
+
 beta.map.Disp.GR
 ## BETA SPECIES ----
 # We split our main dataframe into a list of each dataframe corresponding to
@@ -376,7 +377,7 @@ fish.beta.df.full.joined <- fish.beta.df.full %>%
 beta.map.species <- fish.beta.df.full.joined %>%
   filter(from_year == 1996, to_year == 2017) %>%
   ggplot() +
-  geom_sf(aes(fill = value), 
+  geom_sf(aes(fill = value),
           color = NA) +
   #coord_sf (xlim = c(-61, -46), ylim = c(42.5, 58)) +
   labs(
@@ -386,12 +387,12 @@ beta.map.species <- fish.beta.df.full.joined %>%
     x = "Longitude",
     y = "Latitude"
   ) +
-  scale_fill_viridis_c () +
+  scale_fill_viridis_c() +
   theme_light() +
-  theme(legend.position = "NULL")+
+  theme(legend.position = "NULL") +
   theme(plot.title = element_text(lineheight = .8, size = 15), # title
         #axis.text.x = element_blank(), # remove x axis labels
-        #axis.text.y = element_blank(), # remove y axis labels  
+        #axis.text.y = element_blank(), # remove y axis labels
         axis.ticks = element_blank(), # remove axis ticks
         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 #ggforce::facet_wrap_paginate(~year_surv,
@@ -399,7 +400,7 @@ beta.map.species <- fish.beta.df.full.joined %>%
 
 beta.map <- beta.map.species + beta.map.Disp.GR
 
-# ggsave("BetaDiversity.png",
-#        beta.map,
-#        width =  10,
-#        height = 10)
+ggsave(here("analysis", "figures", "BetaDiversity.png"),
+       beta.map,
+       width =  10,
+       height = 10)
