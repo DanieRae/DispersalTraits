@@ -30,13 +30,6 @@ title-block-published: "Last updated"
 date: now
 date-format: long
 format: html
-execute:
-  echo: true
-  warning: false
-  message: false
-  comment: "#>"
-  fig-path: "../figures/"
-  fig-dpi: 600
 abstract: |
   To understand and predict how regional diversity changes under directed environmental pressure, there needs to be more focus on monitoring broad-scale spatially connected communities (metacommunities). While the importance of dispersal behaviours in shaping community dynamics has long been recognized, much less is known about how variation among species in dispersal behaviours may affect community stability and complexity. Theoretical and experimental metacommunity studies have shown that functional diversity in dispersal types (i.e.  dispersal diversity) can act to desynchronize population fluctuations, and may also be important for stabilizing community dynamics at regional scales. Here we test the hypothesis that communities with greater dispersal diversity have greater stability in biomass over time. We quantified functional variation in dispersal-linked traits of groundfish species across space and time of the Newfoundland and Labrador (NL) shelves from 1995 to 2017. Local communities with higher dispersal diversity, measured using functional evenness, tended to be more stable over five-year intervals. This relationship held even after controlling for local taxonomic diversity as measured by effective species number. Our findings provide support for the hypothesis that dispersal diversity increases stability, suggesting this variable is a useful measure of metacommunity function and monitoring under environmental pressure.
 keywords: |
