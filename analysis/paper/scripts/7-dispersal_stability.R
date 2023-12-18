@@ -133,7 +133,7 @@ dataset_smoothed_plot <-
 
 dataset_smoothed_plot
 
-# ggsave("MarineCommunityStab GAM.png",
-#        dataset_smoothed_plot,
-#        height = 10,
-#        width = 15)
+ggsave(here("analysis", "figures", "MarineCommunityStab GAM.png"),
+       dataset_smoothed_plot,
+       height = 10,
+       width = 15)
