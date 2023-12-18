@@ -5,26 +5,20 @@
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/DanieRae/DispersalTraits/master?urlpath=rstudio)
 
-Repository for the purpose of analysing dispersal trait data in Atlantic
-marine ground fish.
+This repository contains the data and code for our paper: “Stability
+Increases with Dispersal Diversity in the Newfoundland and Labrador
+Shelves”.
 
-This repository contains the data and code for our paper:
-
-> Authors, (YYYY). *Title of your paper goes here*. Name of journal/book
-> <https://doi.org/xxx/xxx>
-
-Our pre-print is online here:
-
-> Authors, (YYYY). *Title of your paper goes here*. Name of
-> journal/book, Accessed 13 Sep 2023. Online at
-> <https://doi.org/xxx/xxx>
+<!-- > Authors, (YYYY). _Title of your paper goes here_. Name of journal/book <https://doi.org/xxx/xxx>
+&#10;Our pre-print is online here:
+&#10;> Authors, (YYYY). _Title of your paper goes here_. Name of journal/book, Accessed 18 Dec 2023. Online at <https://doi.org/xxx/xxx> -->
 
 ### How to cite
 
 Please cite this compendium as:
 
 > Authors, (2023). *Compendium of R code and data for Title of your
-> paper goes here*. Accessed 13 Sep 2023. Online at
+> paper goes here*. Accessed 18 Dec 2023. Online at
 > <https://doi.org/xxx/xxx>
 
 ## Contents
@@ -77,10 +71,3 @@ packages this analysis depends on (also listed in the
 
 **Data :** [CC-0](http://creativecommons.org/publicdomain/zero/1.0/)
 attribution requested in reuse
-
-### Contributions
-
-We welcome contributions from everyone. Before you get started, please
-see our [contributor guidelines](CONTRIBUTING.md). Please note that this
-project is released with a [Contributor Code of Conduct](CONDUCT.md). By
-participating in this project you agree to abide by its terms.

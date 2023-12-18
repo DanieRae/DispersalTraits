@@ -1,36 +1,35 @@
 ---
-title: "Title Goes Here"
-author:
-  - Jane Doe:
-      correspondence: "yes"
-      email: janedoe@fosg.org
-      orcid: 0000-0003-1689-0557
-      institute:
-        - fosg
-        - fop
-  - John Q. Doe:
-      institute: fosg
-      orcid: 0000-0003-1689-0558
-  - Peder Ås:
-      institute: fosg
-      orcid: 0000-0003-1689-0559
-  - Juan Pérez:
-      orcid: 0000-0003-1689-0551
-      institute:
-        - name: Acme Corporation
-  - Max Mustermann:
-      orcid: 0000-0003-1689-0552
-institute:
-  - fosg:
-      name: Formatting Open Science Group
-      address: 23 Science Street, Eureka, Mississippi, USA
-  - fop: Federation of Planets
+title: "Stability Increases with Dispersal Diversity in the Newfoundland and Labrador Shelves (figures only)"
+authors:
+  - name: Danielle M.B. McRae
+    orcid: 0009-0004-5354-8843
+    email: daniellembmacrae@gmail.com
+    corresponding: true
+    affiliations: 
+      - ref: con
+  - name: Valentin Lucet
+    orcid: 0000-0003-0268-818X
+    affiliations: 
+      - ref: wlu
+  - name: Eric J. Pedersen
+    orcid: 0000-0003-1016-540X
+    affiliations: 
+      - ref: con
+  - name: Jennifer M. Sunday
+    orcid: 0000-0001-9372-040X
+    affiliations: 
+      - ref: mcg
+affiliations:
+  - id: con
+    name: Concordia University
+  - id: wlu 
+    name: Wilfrid Laurier University
+  - id: mcg 
+    name: McGill University
 title-block-published: "Last updated"  
 date: now
 date-format: long
-format: 
-  docx:
-    reference-doc: "../templates/template.docx" # Insert path for the DOCX file
+format: html
 execute:
   echo: true
   warning: false
@@ -38,18 +37,10 @@ execute:
   comment: "#>"
   fig-path: "../figures/"
   fig-dpi: 600
-filters:
-  - ../templates/scholarly-metadata.lua
-  - ../templates/author-info-blocks.lua
-  - ../templates/pagebreak.lua
-bibliography: references.bib
-csl: "../templates/journal-of-archaeological-science.csl" # Insert path for the bib-style
 abstract: |
-  Text of abstract
+  To understand and predict how regional diversity changes under directed environmental pressure, there needs to be more focus on monitoring broad-scale spatially connected communities (metacommunities). While the importance of dispersal behaviours in shaping community dynamics has long been recognized, much less is known about how variation among species in dispersal behaviours may affect community stability and complexity. Theoretical and experimental metacommunity studies have shown that functional diversity in dispersal types (i.e.  dispersal diversity) can act to desynchronize population fluctuations, and may also be important for stabilizing community dynamics at regional scales. Here we test the hypothesis that communities with greater dispersal diversity have greater stability in biomass over time. We quantified functional variation in dispersal-linked traits of groundfish species across space and time of the Newfoundland and Labrador (NL) shelves from 1995 to 2017. Local communities with higher dispersal diversity, measured using functional evenness, tended to be more stable over five-year intervals. This relationship held even after controlling for local taxonomic diversity as measured by effective species number. Our findings provide support for the hypothesis that dispersal diversity increases stability, suggesting this variable is a useful measure of metacommunity function and monitoring under environmental pressure.
 keywords: |
-  keyword 1; keyword 2; keyword 3
-highlights: |
-  These are the highlights. 
+  dispersal; stability; diversity
 ---
 
 <!-- This is the format for text comments that will be ignored during renderings. Do not put R code in these comments because it will not be ignored. -->
@@ -57,8 +48,6 @@ highlights: |
 <!-- With the following code you can access and display values from the yml header above. -->
 
 Keywords: `r rmarkdown::metadata$keywords`
-
-Highlights: `r rmarkdown::metadata$highlights`
 
 <!-- The actual document text starts here: -->
 
