@@ -102,13 +102,13 @@ PCOAplot <- PCOA.plot + geom_segment(
       y = 0,
       yend = y),
   arrow = arrow(length = unit(0.25, "cm")),
-                colour = "red") +
+  colour = "red") +
   geom_text(
     data = U,
     aes(x = x * 1.1,
         y = y * 1.1,
         label = stringr::str_wrap(var_name, 20)),
-        colour = "black"
+    colour = "black"
   )
 
 # PCOAplot

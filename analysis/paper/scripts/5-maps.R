@@ -24,16 +24,16 @@ library(tmap)
 #STRATUM DEPTH MAP----
 
 stratum.depth.geom <-
-   merge(x = stratum.shpfile, y = stratum.depth, by = "stratum") %>%
+  merge(x = stratum.shpfile, y = stratum.depth, by = "stratum") %>%
   sf::st_as_sf()
 
 map.depth <- stratum.depth.geom %>%
-   ggplot() +
-   geom_sf(aes(fill = depth.ave),
-           color = "dark grey",
-           size = 0.1) +
-   coord_sf(xlim = c(-59, -47)) +
-   scale_fill_cmocean(name = "deep") +
+  ggplot() +
+  geom_sf(aes(fill = depth.ave),
+          color = "dark grey",
+          size = 0.1) +
+  coord_sf(xlim = c(-59, -47)) +
+  scale_fill_cmocean(name = "deep") +
   theme_light() +
   labs(fill = "Depth (m)", colour = "") + # legend titles
   theme(plot.title = element_text(lineheight = .8, size = 15, hjust = 0.2), # title

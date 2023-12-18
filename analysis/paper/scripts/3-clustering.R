@@ -76,7 +76,7 @@ dendogramPlot <- rect.hclust(fish.traits.40NA.UPGMA.reordered, k = 25)
 # Plot the final dendrogram with group colors (RGBCMY...)
 # Fast method using the additional hcoplot() function:
 # !!! Sourcing the function first
-# source("functions/hcoplot.R")
+# source("R/hcoplot.R")
 # hcoplot(fish.traits.40NA.UPGMA.reordered, fish.traits.40NA.dist, k = 25)
 
 

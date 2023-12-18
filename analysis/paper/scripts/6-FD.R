@@ -19,7 +19,7 @@ abun.fish.biomass <- as.matrix(abun.fish.biomass)
 
 functional.diversity <- dbFD(fish.traits.40NA, abun.fish.biomass, corr = "lingoes")
 
-  ##FD SAVED FILE ----
+##FD SAVED FILE ----
 saveRDS(functional.diversity,
         file = here("analysis", "data", "derived_data", "FunctionalDiv.rds"))
 
