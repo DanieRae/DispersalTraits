@@ -24,16 +24,16 @@ library(tmap)
 #STRATUM DEPTH MAP----
 
 stratum.depth.geom <-
-   merge (x = stratum.shpfile, y = stratum.depth, by = "stratum") %>%
+   merge(x = stratum.shpfile, y = stratum.depth, by = "stratum") %>%
   sf::st_as_sf()
 
 map.depth <- stratum.depth.geom %>%
    ggplot() +
    geom_sf(aes(fill = depth.ave),
            color = "dark grey",
-           size = 0.1)+
-   coord_sf (xlim = c(-59, -47))+
-   scale_fill_cmocean(name = "deep")+
+           size = 0.1) +
+   coord_sf(xlim = c(-59, -47)) +
+   scale_fill_cmocean(name = "deep") +
   theme_light() +
   labs(fill = "Depth (m)", colour = "") + # legend titles
   theme(plot.title = element_text(lineheight = .8, size = 15, hjust = 0.2), # title
@@ -119,7 +119,8 @@ map2 <- effective.species.strata %>%
 #ggforce::facet_wrap_paginate(~year_surv,
 # nrow = 2, ncol = 2, page = 2)
 
-# ggsave("Spatiotemporal Variation in Effective Species Diversity.png",
+# ggsave(here("analysis", "figures",
+#             "Spatiotemporal Variation in Effective Species Diversity.png"),
 #        map2,
 #        width =  10,
 #        height = 10)
@@ -144,8 +145,9 @@ map3 <- effective.dispersal.strata %>%
                                     family = "Arial Narrow"),
         legend.position = "bottom",
         legend.key.size = unit(0.8, 'cm'))
-#
-# ggsave("Spatiotemporal Variation in Effective Dispersal Diversity.png",
+
+# ggsave(here("analysis", "figures",
+#             "Spatiotemporal Variation in Effective Dispersal Diversity.png"),
 #        map3,
 #        width =  10,
 #        height = 10)
@@ -400,7 +402,7 @@ beta.map.species <- fish.beta.df.full.joined %>%
 
 beta.map <- beta.map.species + beta.map.Disp.GR
 
-ggsave(here("analysis", "figures", "BetaDiversity.png"),
-       beta.map,
-       width =  10,
-       height = 10)
+# ggsave(here("analysis", "figures", "BetaDiversity.png"),
+#        beta.map,
+#        width =  10,
+#        height = 10)
