@@ -100,11 +100,4 @@ fish.abun.clust <-
         by = "taxa_name",
         all.x = TRUE)
 
-
-#Redundant?  group by year and stratum see Page 5 line 78#
-# 
-# fish.abun.clust.gr <- fish.abun.clust %>%
-#   group_by(stratum, year_surv, clusterID) %>%
-#   dplyr::summarise(clust_biomass = sum(final_biomass))
-# 
-#   dplyr::summarise(Unique_FE = n_distinct(clusterID))
+##END##

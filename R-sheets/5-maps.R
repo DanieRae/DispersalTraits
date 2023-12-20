@@ -53,8 +53,9 @@ map.depth
  
 
 
-#EFFECTIVE DISPERSAL DIVERSITY ####
-#Effective functional diversity with Shannon in clustered groups
+#Dispersal groups with hill number ####
+
+#Biomass of clustered dispersal groups run with Shannon diversity
 fish.abun.clust.gr <- fish.abun.clust %>%
   #first find, for each trawl and each functional group, the total biomass of that group in that trawl
   group_by(stratum, year_surv, clusterID) %>%

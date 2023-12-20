@@ -108,3 +108,4 @@ PCOAplot <- PCOA.plot + geom_segment(
 
 #ggsave(path = "figures", "PCOAplot.png", PCOAplot, width =  10, height = 10)
 
+##END##
