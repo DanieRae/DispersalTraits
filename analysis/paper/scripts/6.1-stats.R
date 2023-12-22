@@ -385,7 +385,7 @@ abline(0, 0, lty = 2)
 #   family = gaussian(link = "log"),
 #   start = 0)
 
-source(file = "functions/glmm_funs.R")
+source(file = "R/glmm_funs.R")
 
 if (!require("coefplot2")) {
   remotes::install_github(
