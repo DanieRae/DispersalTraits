@@ -384,40 +384,40 @@ abline(0, 0, lty = 2)
 #   data = abun.feve.bin.noNA,
 #   family = gaussian(link = "log"),
 #   start = 0)
-
-source(file = "R/glmm_funs.R")
-
-if (!require("coefplot2")) {
-  remotes::install_github(
-    "palday/coefplot2",
-    subdir = "pkg",
-    upgrade = "always",
-    quiet = TRUE
-  )
-}
-
-library(coefplot2)
-overdisp_fun(glm1)
-
-summary(glm1)
-tab_model(glm1)
-sjPlot::plot_model(glm1)
-
-effects.V1 <- effect(term = "V1", mod = glm1)
-effects.V1 <- as.data.frame(effects.V1)
-
-abun.feve.bin.noNA.fit <-
-  filter(abun.feve.bin.noNA, stratum %in% c(201:202))
-
-
-ggplot() +
-  geom_point(data = rate.feve.noNA.fit, aes(x = V1, y = sd2.rate.change)) +
-  geom_point(data = effects.V1, aes(x = V1, y = fit), color = "red") +
-  geom_line(data = effects.V1, aes(x = V1, y = fit), color = "red") +
-  geom_ribbon(
-    data = effects.V1,
-    aes(x = V1, ymin = lower, ymax = upper),
-    alpha = 0.3,
-    fill = "red"
-  ) +
-  facet_wrap( ~ stratum)
+#
+# source(file = "R/glmm_funs.R")
+#
+# if (!require("coefplot2")) {
+#   remotes::install_github(
+#     "palday/coefplot2",
+#     subdir = "pkg",
+#     upgrade = "always",
+#     quiet = TRUE
+#   )
+# }
+#
+# library(coefplot2)
+# overdisp_fun(glm1)
+#
+# summary(glm1)
+# tab_model(glm1)
+# sjPlot::plot_model(glm1)
+#
+# effects.V1 <- effect(term = "V1", mod = glm1)
+# effects.V1 <- as.data.frame(effects.V1)
+#
+# abun.feve.bin.noNA.fit <-
+#   filter(abun.feve.bin.noNA, stratum %in% c(201:202))
+#
+#
+# ggplot() +
+#   geom_point(data = rate.feve.noNA.fit, aes(x = V1, y = sd2.rate.change)) +
+#   geom_point(data = effects.V1, aes(x = V1, y = fit), color = "red") +
+#   geom_line(data = effects.V1, aes(x = V1, y = fit), color = "red") +
+#   geom_ribbon(
+#     data = effects.V1,
+#     aes(x = V1, ymin = lower, ymax = upper),
+#     alpha = 0.3,
+#     fill = "red"
+#   ) +
+#   facet_wrap( ~ stratum)
