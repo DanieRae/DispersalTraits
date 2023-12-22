@@ -1,7 +1,8 @@
 #DATA REQUIRED PAGE 1 - LINE 1 TO 186#
-#THIS SHEET RUNS THE TRAIT FILTERING FOR REMOVINGS DATA WITH TOO MANY NA'S --- USED IN PAGE 3-CLUSTERING, PAGE 4-PCOA, AND PAGE 5-MAPS#
+#THIS SHEET RUNS THE TRAIT FILTERING FOR REMOVINGS DATA WITH TOO MANY NA'S
+# USED IN PAGE 3-CLUSTERING, PAGE 4-PCOA, AND PAGE 5-MAPS#
 
-# Install and load packages ---- 
+# Install and load packages ----
 
 # install.packages("FD")
 # install.packages("skimr")
@@ -13,7 +14,7 @@ library(skimr)
 # Apply function FUN to each column in the data.frame, returns
 # a vector containing how many NAs are in a given column
 
-fish.traits.NAs <- apply(fish.traits, FUN=function(x){sum(is.na(x))}, MARGIN = 2)
+fish.traits.NAs <- apply(fish.traits, FUN = function(x){sum(is.na(x))}, MARGIN = 2)
 
 #40NA ----
 # Identify which columns have less than 40 NAs
@@ -35,6 +36,4 @@ fish.traits.40NA.dist <- gowdis(fish.traits.40NA, asym.bin = NULL)
 #ONEHOT----
 
 fish.traits.40NA.hot <- one_hot(as.data.table(fish.traits.40NA))
-fish.traits.40NA.hot.dist <-gowdis(fish.traits.40NA.hot, asym.bin = NULL)
-
-##END##
+fish.traits.40NA.hot.dist <- gowdis(fish.traits.40NA.hot, asym.bin = NULL)

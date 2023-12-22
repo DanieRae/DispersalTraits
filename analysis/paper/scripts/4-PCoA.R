@@ -1,15 +1,20 @@
-#DATA REQUIRED FROM PAGE 2#
-#PRODUCES THE PCOA PLOTS FOR TRAIT SPACE VISUALIZATION ---- NOT USED FOR ANOTHER PAGE#
-#NOTE PCOA two function produce similar plots, cmdscale has open circles and pcoa uses the species names#
+# DATA REQUIRED FROM PAGE 2
+# PRODUCES THE PCOA PLOTS FOR TRAIT SPACE VISUALIZATION
+# NOT USED FOR ANOTHER PAGE
+# NOTE PCOA two function produce similar plots, cmdscale has open circles and
+# pcoa uses the species names
 
-# Install and load packages ---- 
+# Install and load packages ----
 # install.packages("ggplot2")
 
 library(ggplot2)
+library(here)
 
 # CMDSCALE - PCoA ----
-#multidimensional scaling, to return a set of points that reflect the distances/dissimilarities between the trait values#
-#returns a matrix of coordinates-points for dissimilarities and eigenvalues computed from scaling#
+# multidimensional scaling, to return a set of points that reflect the
+# distances/dissimilarities between the trait values#
+# returns a matrix of coordinates-points for dissimilarities and
+# eigenvalues computed from scaling
 fish.cmd <-
   cmdscale(fish.traits.40NA.dist,
            eig = TRUE,
@@ -17,21 +22,21 @@ fish.cmd <-
            k = 2)
 
 
-fish.cdm.eig <- round (fish.cmd$eig / sum(fish.cmd$eig) * 100, 1)
+fish.cdm.eig <- round(fish.cmd$eig / sum(fish.cmd$eig) * 100, 1)
 
 fish.cmd.values <- fish.cmd$points
 
 fish.cmd.data <- data.frame(Sample = rownames(fish.cmd.values),
-                            X = fish.cmd.values [, 1],
-                            Y = fish.cmd.values [, 2])
+                            X = fish.cmd.values[, 1],
+                            Y = fish.cmd.values[, 2])
 fish.cmd.data$clusterID <- fish.traits.40NA.clust$clusterID
 
 #PLOT - PCoA W/ Ellipses ----
 # missing vectors #
-PCOA.plot<-
-  ggplot(data = fish.cmd.data, aes (x = X, y = Y)) +
+PCOA.plot <-
+  ggplot(data = fish.cmd.data, aes(x = X, y = Y)) +
   geom_point(size = 2, color = "grey") +
-  stat_ellipse(aes(color = clusterID))+
+  stat_ellipse(aes(color = clusterID)) +
   theme_bw() +
   xlab(paste("PCoA 1: ", fish.cdm.eig[1], "%", sep = "")) +
   ylab(paste("PCoA 2: ", fish.cdm.eig[2], "%", sep = "")) +
@@ -97,15 +102,16 @@ PCOAplot <- PCOA.plot + geom_segment(
       y = 0,
       yend = y),
   arrow = arrow(length = unit(0.25, "cm")),
-                colour = "red") +
+  colour = "red") +
   geom_text(
     data = U,
     aes(x = x * 1.1,
         y = y * 1.1,
         label = stringr::str_wrap(var_name, 20)),
-        colour = "black"
+    colour = "black"
   )
 
-#ggsave(path = "figures", "PCOAplot.png", PCOAplot, width =  10, height = 10)
+# PCOAplot
+ggsave(path = here("analysis","figures"), "PCOAplot.png",
+       PCOAplot, width =  10, height = 10)
 
-##END##

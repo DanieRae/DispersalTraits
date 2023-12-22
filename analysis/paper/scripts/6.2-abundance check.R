@@ -27,10 +27,10 @@ fish.abun.complete.noweight <- select(fish.abun.complete.minbio, -c(weight))
 ##WIDE----
 #abundance by site (strata,year)
 abun.fish.min.wide <-
-  as.data.table (spread(fish.abun.complete.noweight, taxa_name, final_biomass))
+  as.data.table(spread(fish.abun.complete.noweight, taxa_name, final_biomass))
 
 abun.fish.min.biomass <-
-  select(abun.fish.min.wide,-c ("stratum", "year_surv"))
+  select(abun.fish.min.wide,-c("stratum", "year_surv"))
 
 abun.fish.min.names <- sort(names(abun.fish.min.biomass), decreasing = FALSE)
 
@@ -46,7 +46,8 @@ abun.fish.min.biomass <- as.matrix(abun.fish.min.biomass)
 # saveRDS(functional.diversity.minbio, file = "FunctionalDivMinBIO.rds")
 
 #load functional diversity metrics that used min-biomass filled data
-functional.diversity.minbio <- readRDS("FunctionalDivMinBIO.rds")
+functional.diversity.minbio <-
+  readRDS(here("analysis", "data", "derived_data", "FunctionalDivMinBIO.rds"))
 
 year.strat <- select(abun.fish.min.wide, c("stratum", "year_surv"))
 

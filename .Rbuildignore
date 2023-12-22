@@ -1,0 +1,9 @@
+^renv$
+^renv\.lock$
+^DispersalTraits\.Rproj$
+^\.Rproj\.user$
+^Dockerfile$
+^render-in-docker\.yaml$
+analysis
+^README\.Rmd$
+^README-.*\.png$
