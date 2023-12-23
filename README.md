@@ -9,17 +9,17 @@ This repository contains the data and code for our paper: “Stability
 Increases with Dispersal Diversity in the Newfoundland and Labrador
 Shelves”.
 
-<!-- > Authors, (YYYY). _Title of your paper goes here_. Name of journal/book <https://doi.org/xxx/xxx>
+<!-- > Authors, (YYYY). _Stability Increases with Dispersal Diversity in the Newfoundland and Labrador Shelve_. Name of journal/book <https://doi.org/xxx/xxx>
 &#10;Our pre-print is online here:
-&#10;> Authors, (YYYY). _Title of your paper goes here_. Name of journal/book, Accessed 18 Dec 2023. Online at <https://doi.org/xxx/xxx> -->
+&#10;> Authors, (YYYY). _Stability Increases with Dispersal Diversity in the Newfoundland and Labrador Shelve_. Name of journal/book, Accessed 23 Dec 2023. Online at <https://doi.org/xxx/xxx> -->
 
 ### How to cite
 
 Please cite this compendium as:
 
-> Authors, (2023). *Compendium of R code and data for Title of your
-> paper goes here*. Accessed 18 Dec 2023. Online at
-> <https://doi.org/xxx/xxx>
+> Authors, (2023). *Compendium of R code and data for Stability
+> Increases with Dispersal Diversity in the Newfoundland and Labrador
+> Shelve*. Accessed 23 Dec 2023. Online at <https://doi.org/xxx/xxx>
 
 ## Contents
 
