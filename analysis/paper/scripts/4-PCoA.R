@@ -31,12 +31,24 @@ fish.cmd.data <- data.frame(Sample = rownames(fish.cmd.values),
                             Y = fish.cmd.values[, 2])
 fish.cmd.data$clusterID <- fish.traits.40NA.clust$clusterID
 
+fish.cmd.data <-
+  fish.cmd.data |>
+  group_by(clusterID) |>
+  mutate(cluster_size = n()) |>
+  ungroup()
+
 #PLOT - PCoA W/ Ellipses ----
 # missing vectors #
 PCOA.plot <-
   ggplot(data = fish.cmd.data, aes(x = X, y = Y)) +
-  geom_point(size = 2, color = "grey") +
-  stat_ellipse(aes(color = clusterID)) +
+  geom_point(size = 2,
+             data = filter(fish.cmd.data, cluster_size < 4),
+             color = "grey") +
+  geom_point(size = 2,
+             data = filter(fish.cmd.data, cluster_size >= 4),
+             aes(color = clusterID)) +
+  stat_ellipse(data = filter(fish.cmd.data, cluster_size >= 4),
+              aes(color = clusterID)) +
   theme_bw() +
   xlab(paste("PCoA 1: ", fish.cdm.eig[1], "%", sep = "")) +
   ylab(paste("PCoA 2: ", fish.cdm.eig[2], "%", sep = "")) +
@@ -110,6 +122,8 @@ PCOAplot <- PCOA.plot + geom_segment(
         label = stringr::str_wrap(var_name, 20)),
     colour = "black"
   )
+
+PCOAplot
 
 # PCOAplot
 ggsave(path = here("analysis","figures"), "PCOAplot.png",
