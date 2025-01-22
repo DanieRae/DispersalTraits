@@ -216,10 +216,4 @@ stratum.shpfile.adjusted <- st_read(here("analysis", "data", "derived_data", "sp
   dplyr::rename(stratum = stratum_id_base) %>%
   filter(stratum %in% strata.keep)
 
-##Stratum Depth  ----
-# stratum.depth <- read.csv(here("analysis", "data", "raw_data", "tabular",
-#                                "stratum_depth.csv"))
-#
-# stratum.depth$depth.ave <- as.numeric(stratum.depth$depth.ave)
-
 #END#

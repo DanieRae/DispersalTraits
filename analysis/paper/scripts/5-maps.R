@@ -19,37 +19,7 @@ library(dplyr)
 library(stringr)
 library(cmocean)
 library(tmap)
-
-
-#STRATUM DEPTH MAP----
-
-stratum.depth.geom <-
-  merge(x = stratum.shpfile, y = stratum.depth, by = "stratum") %>%
-  sf::st_as_sf()
-
-map.depth <- stratum.depth.geom %>%
-  ggplot() +
-  geom_sf(aes(fill = depth.ave),
-          color = "dark grey",
-          size = 0.1) +
-  coord_sf(xlim = c(-59, -47)) +
-  scale_fill_cmocean(name = "deep") +
-  theme_light() +
-  labs(fill = "Depth (m)", colour = "") + # legend titles
-  theme(plot.title = element_text(lineheight = .8, size = 15, hjust = 0.2), # title
-        axis.text.x = element_text(color = "black", size = 12), # remove x axis labels
-        axis.text.y = element_text(color = "black", size = 12), # remove y axis labels
-        #axis.ticks = element_blank(), # remove axis ticks
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), # remove grid lines
-        legend.position = "bottom",
-        legend.key.size = unit(0.5, 'cm'),
-        legend.text = element_text(face = "bold"))
-
-map.depth
-ggsave(here("analysis", "figures", "StratumDepth.png"),
-       map.depth, width =  10, height = 10)
-
+library(vegan)
 
 
 #EFFECTIVE DISPERSAL DIVERSITY ####
@@ -57,11 +27,11 @@ ggsave(here("analysis", "figures", "StratumDepth.png"),
 fish.abun.clust.gr <- fish.abun.clust %>%
   #first find, for each trawl and each functional group, the total biomass of that group in that trawl
   group_by(stratum, year_surv, clusterID) %>%
-  dplyr::summarize(group_biomass = sum(group_biomass))
+  dplyr::summarize(group_biomass = sum(group_biomass))%>%
 #calculate average biomass per stratum for each functional group
-# group_by(stratum, year_surv, clusterID) %>%
-# dplyr::summarize(group_biomass = mean(group_biomass)) %>%
-# ungroup()
+  group_by(stratum, year_surv, clusterID) %>%
+  dplyr::summarize(group_biomass = mean(group_biomass)) %>%
+  ungroup()
 
 
 #calculate the Hill number for each stratum in each year
