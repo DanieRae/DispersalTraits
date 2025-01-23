@@ -42,8 +42,8 @@ abun.fish.min.biomass <- as.matrix(abun.fish.min.biomass)
 
 #FD --------
 #If you need to re-run the diversity calculation you can use this code, and run it
-# functional.diversity.minbio <- dbFD(fish.traits.40NA, abun.fish.min.biomass, corr = "lingoes")
-# saveRDS(functional.diversity.minbio, file = "FunctionalDivMinBIO.rds")
+functional.diversity.minbio <- dbFD(fish.traits.40NA, abun.fish.min.biomass, corr = "lingoes")
+saveRDS(functional.diversity.minbio, file = "FunctionalDivMinBIO.rds")
 
 #load functional diversity metrics that used min-biomass filled data
 functional.diversity.minbio <-

@@ -16,6 +16,7 @@ library(ggplot2)
 library(ggforce)
 library(patchwork)
 library(dplyr)
+library(tidyr)
 library(stringr)
 library(cmocean)
 library(tmap)
@@ -37,7 +38,7 @@ fish.abun.clust.gr <- fish.abun.clust %>%
 #calculate the Hill number for each stratum in each year
 effective.dispersal <- fish.abun.clust.gr %>%
   group_by(stratum, year_surv) %>%
-  dplyr::summarize(effective_species = exp(diversity(group_biomass, "shannon")))
+  dplyr::summarize(effective_dispersal = exp(diversity(group_biomass, "shannon")))
 
 
 effective.dispersal.strata <-
@@ -99,7 +100,7 @@ map2 <- effective.species.strata %>%
 map3 <- effective.dispersal.strata %>%
   filter(year_surv %in% c(1995, 2000, 2005,2010,2015)) %>%
   ggplot() +
-  geom_sf(aes(fill = effective_species),
+  geom_sf(aes(fill = effective_dispersal),
           color = NA) + #This removed the boarders for the strata, can use size =0.01 to make boarders as samll as possible
   #ggtitle() +
   scale_fill_viridis_c() +
@@ -124,255 +125,10 @@ map3 <- effective.dispersal.strata %>%
 
 map.diversity <- map2 / map3
 
-ggsave(here("analysis", "figures", "Taxonomic-DispersalGroup.png"),
-       map.diversity,
-       width =  12,
-       height = 10)
-
-# BETA DIVERSITY ----
-
-##BETA DISPERSAL GROUPS ----
-# We split our main dataframe into a list of each dataframe corresponding to
-# each stratum
-
-fish.abun.clust.gr.split <-
-  fish.abun.clust.gr %>%
-  # We exclude stratum for which there is only data for 1 year
-  filter(!(
-    stratum %in%
-      c(
-        501,
-        502,
-        503,
-        504,
-        505,
-        506,
-        507,
-        508,
-        509,
-        510,
-        511,
-        512,
-        513,
-        514,
-        515,
-        516,
-        517,
-        518,
-        519,
-        710,
-        915,
-        917,
-        918
-      )
-  )) %>%
-  # Split things
-  split.data.frame(.$stratum)
-
-# Using lapply, we apply a function to each data frame in the list. Here we
-# create a presence absence dataframe for each species and year/stratum
-# combinations, by pivoting the taxa column into columns
-fish.pa.pivot.FD <-
-  lapply(fish.abun.clust.gr.split,
-         function(df) {
-           df <- df %>%
-             mutate(
-               presence_absence = as.numeric(group_biomass > 0),
-               stratum_year = str_c(stratum, "_", year_surv)
-             ) %>%
-             pivot_wider(names_from = clusterID,
-                         values_from = presence_absence,
-                         id_cols = stratum_year)
-         })
-
-# Still with lapply, we turn our dataframes into matrices and make sure their
-# rownames correspond to the stratum/year combination
-fish.pa.pivot.FD.mat <- lapply(fish.pa.pivot.FD, function(df) {
-  # remove first column to be casted correctly as integer
-  mat <- as.matrix(df[,-1])
-  mat[is.na(mat)] <- 0
-  rownames(mat) <- df$stratum_year
-  return(mat)
-})
-
-# Still with lapply, we compute the beta diversity (see ?betadiver, equation 15 which is podoni:Jaccard), cast as a
-# matrix and return
-fish.beta.FD <- lapply(fish.pa.pivot.FD.mat, function(mat) {
-  mat <- as.matrix(betadiver(mat, 15))
-  return(mat)
-})
-
-# Still with lapply, we turn our matrix back into a usable, joinable dataframe
-# - we first collect the rownames, pivot, rename, separate the columns and
-# wrangle the data so that the "to" year is later than the "from" year
-fish.beta.FD.df <- lapply(fish.beta.FD, function(mat) {
-  as.data.frame(mat) %>%
-    tibble::rownames_to_column() %>%
-    pivot_longer(cols = 2:ncol(.)) %>%
-    unique() %>%
-    dplyr::rename(from = rowname, to = name) %>%
-    tidyr::separate(from, c("from_stratum", "from_year"), "_") %>%
-    tidyr::separate(to, c("to_stratum", "to_year"), "_") %>%
-    select(-to_stratum) %>%
-    dplyr::rename(stratum = from_stratum) %>%
-    filter(to_year > from_year)
-})
-
-# We turn the list into a fully combined dataframe
-fish.beta.FD.df.full <- bind_rows(fish.beta.FD.df)
-
-# We join to the stratum spatial data
-fish.beta.FD.df.full.joined <- fish.beta.FD.df.full %>%
-  left_join(stratum.shpfile, by = "stratum") %>%
-  st_as_sf()
-
-###MAP - BETA DISP.GR----
-# We select the years and plot
-beta.map.Disp.GR <- fish.beta.FD.df.full.joined %>%
-  filter(from_year == 1996, to_year == 2017) %>%
-  ggplot() +
-  geom_sf(aes(fill = value),
-          color = NA) +
-  #coord_sf (xlim = c(-61, -46), ylim = c(42.5, 56)) +
-  labs(
-    title = "Dispersal Group Turn Over",
-    subtitle = "1996-2017",
-    fill = "Dissimilarity",
-    x = "Longitude",
-    y = "Latitude"
-  ) +
-  scale_fill_viridis_c() +
-  theme_light() +
-  theme(plot.title = element_text(lineheight = .8, size = 15), # title
-        #axis.text.x = element_blank(), # remove x axis labels
-        #axis.text.y = element_blank(), # remove y axis labels
-        axis.ticks = element_blank(), # remove axis ticks
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-
-beta.map.Disp.GR
-## BETA SPECIES ----
-# We split our main dataframe into a list of each dataframe corresponding to
-# each stratum
-
-fish.abun.clean.split <- fish.abun.clean %>%
-  # We exclude stratum for which there is only data for 1 year
-  filter(!(
-    stratum %in%
-      c(
-        501,
-        502,
-        503,
-        504,
-        505,
-        506,
-        507,
-        508,
-        509,
-        510,
-        511,
-        512,
-        513,
-        514,
-        515,
-        516,
-        517,
-        518,
-        519,
-        710,
-        915,
-        917,
-        918
-      )
-  )) %>%
-  # Split things
-  split.data.frame(.$stratum)
-
-# Using lapply, we apply a function to each data frame in the list. Here we
-# create a presence absence dataframe for each species and year/stratum
-# combinations, by pivoting the taxa column into columns
-fish.pa.pivot <-
-  lapply(fish.abun.clean.split,
-         function(df) {
-           df <- df %>%
-             mutate(
-               presence_absence = as.numeric(group_biomass > 0),
-               stratum_year = str_c(stratum, "_", year_surv)
-             ) %>%
-             pivot_wider(names_from = taxa_name,
-                         values_from = presence_absence,
-                         id_cols = stratum_year)
-         })
-
-# Still with lapply, we turn our dataframes into matrices and make sure their
-# rownames correspond to the stratum/year combination
-fish.pa.pivot.mat <- lapply(fish.pa.pivot, function(df) {
-  # remove first column to be casted correctly as integer
-  mat <- as.matrix(df[,-1])
-  mat[is.na(mat)] <- 0
-  rownames(mat) <- df$stratum_year
-  return(mat)
-})
-
-# Still with lapply, we compute the beta diversity (see ?betadiver, equation 15 which is podoni:Jaccard), cast as a
-# matrix and return
-fish.beta <- lapply(fish.pa.pivot.mat, function(mat) {
-  mat <- as.matrix(betadiver(mat, 15))
-  return(mat)
-})
-
-# Still with lapply, we turn our matrix back into a usable, joinable dataframe
-# - we first collect the rownames, pivot, rename, separate the columns and
-# wrangle the data so that the "to" year is later than the "from" year
-fish.beta.df <- lapply(fish.beta, function(mat) {
-  as.data.frame(mat) %>%
-    tibble::rownames_to_column() %>%
-    pivot_longer(cols = 2:ncol(.)) %>%
-    unique() %>%
-    dplyr::rename(from = rowname, to = name) %>%
-    tidyr::separate(from, c("from_stratum", "from_year"), "_") %>%
-    tidyr::separate(to, c("to_stratum", "to_year"), "_") %>%
-    select(-to_stratum) %>%
-    dplyr::rename(stratum = from_stratum) %>%
-    filter(to_year > from_year)
-})
-
-# We turn the list into a fully combined dataframe
-fish.beta.df.full <- bind_rows(fish.beta.df)
-
-# We join to the stratum spatial data
-fish.beta.df.full.joined <- fish.beta.df.full %>%
-  left_join(stratum.shpfile, by = "stratum") %>%
-  st_as_sf()
-
-###MAP BETA.SPECIES----
-# We select the years and plot
-beta.map.species <- fish.beta.df.full.joined %>%
-  filter(from_year == 1996, to_year == 2017) %>%
-  ggplot() +
-  geom_sf(aes(fill = value),
-          color = NA) +
-  #coord_sf (xlim = c(-61, -46), ylim = c(42.5, 58)) +
-  labs(
-    title = "Species Turn Over",
-    subtitle = "1996-2017",
-    fill = "Dissimilarity",
-    x = "Longitude",
-    y = "Latitude"
-  ) +
-  scale_fill_viridis_c() +
-  theme_light() +
-  theme(legend.position = "NULL") +
-  theme(plot.title = element_text(lineheight = .8, size = 15), # title
-        #axis.text.x = element_blank(), # remove x axis labels
-        #axis.text.y = element_blank(), # remove y axis labels
-        axis.ticks = element_blank(), # remove axis ticks
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-#ggforce::facet_wrap_paginate(~year_surv,
-# nrow = 2, ncol = 2, page = 2)
-
-beta.map <- beta.map.species + beta.map.Disp.GR
-
-# ggsave(here("analysis", "figures", "BetaDiversity.png"),
-#        beta.map,
-#        width =  10,
+# Uncomment to save figure
+# ggsave(here("analysis", "figures", "Taxonomic-DispersalGroup.png"),
+#        map.diversity,
+#        width =  12,
 #        height = 10)
+
+#END-----
