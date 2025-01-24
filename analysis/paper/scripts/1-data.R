@@ -1,18 +1,18 @@
 # Install and load packages ----
 
-# install.packages("dplyr")
-# install.packages("tidyr")
-# install.packages("stringr")
-# install.packages("devtools")
-# install.packages("mltools")
-# install.packages("data.table")
-# install.packages("vegan")
-# install.packages("ade4")
-# install.packages("adespatial")
-# install.packages("reshape")
-# install.packages("skimr")
-# install.packages("sf")
-# install.packages("here")
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("stringr")
+install.packages("devtools")
+install.packages("mltools")
+install.packages("data.table")
+install.packages("vegan")
+install.packages("ade4")
+install.packages("adespatial")
+install.packages("reshape")
+install.packages("skimr")
+install.packages("sf")
+install.packages("here")
 
 
 library(dplyr)
@@ -215,5 +215,10 @@ stratum.shpfile.adjusted <- st_read(here("analysis", "data", "derived_data", "sp
   dplyr::summarise(geometry = st_union(geometry)) %>%
   dplyr::rename(stratum = stratum_id_base) %>%
   filter(stratum %in% strata.keep)
+
+##Stratum Depth  ----
+stratum.depth <- st_read("stratum_depth.csv")
+
+stratum.depth$depth.ave <- as.numeric(stratum.depth$depth.ave)
 
 #END#
