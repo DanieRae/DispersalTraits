@@ -5,6 +5,7 @@
 # devtools::install_github("pedersen-fisheries-lab/sspm", build_vignettes = TRUE)
 
 library(sspm)
+library(patchwork)
 
 
 # Make SSPM model ----
@@ -92,7 +93,7 @@ stratum.abun.mut <- stratum.abun %>%
 #MODEL ----
 gam.stability <-
   gam(
-    log((bin_sd_biomass)^-1) ~ Z_FEve + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 200),
+    log((bin_sd_biomass)^-1) ~ Z_FEve +Z_effectivesp + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 200),
     data = stratum.abun.mut,
     method = "REML",
     type = "terms",
@@ -106,34 +107,73 @@ plot(gam.stability)
 ##ERICS CODE ----
 summary(gam.stability)
 term_predictors <- predict(gam.stability, type = "terms", se.fit = TRUE)
-disperse_div_fit <- as.vector(term_predictors$fit[,"Z_FEve"]) #the as.vector part is just to make sure this is a vector, and not a 1D matrix, for plotting.
 
-disperse_intercept <- as.vector(attr(term_predictors,"const")) #like this because the intercept is a single number, so it's just stored with the predicted values as a constant
-disperse_div_fit <- disperse_div_fit + disperse_intercept
+disperse_div_predictions <- stratum.abun.mut %>%
+  mutate(
+    #fitted values for each term for confidence intervals
+    FEve_fit = as.vector(term_predictors$fit[,"Z_FEve"]),
+    effectivesp_fit = as.vector(term_predictors$fit[,"Z_effectivesp"]),
+    # standard errors for each term for confidence intervals
+    FEve_se = as.vector(term_predictors$se.fit[,"Z_FEve"]),
+    effectivesp_se = as.vector(term_predictors$se.fit[,"Z_effectivesp"]),
+    #residual values
+    resid =  residuals(gam.stability))
 
-#Confidence Int
-disp_div_se <- as.vector(term_predictors$se.fit[,"Z_FEve"])
 
 ##PLOT GAM ----
-dataset_smoothed_plot <-
-  ggplot(data = stratum.abun.mut, aes(y = log((bin_sd_biomass)^-1), x = Z_FEve)) +
+FEve_partial_resid_plot <-
+  ggplot(data = disperse_div_predictions, aes(y = FEve_fit + resid, x = Z_FEve)) +
   geom_point() +
-  geom_line(aes(y = disperse_div_fit),
+  geom_line(aes(y = FEve_fit),
             colour = "red", size = 1.2) +
-  geom_ribbon(aes(ymin = disperse_div_fit - 1.96*disp_div_se,
-                  ymax = disperse_div_fit + 1.96*disp_div_se),
+  geom_ribbon(aes(ymin = FEve_fit - 1.96*FEve_se,
+                  ymax = FEve_fit + 1.96*FEve_se),
               fill = "red", alpha = 0.2) +
   theme_bw() +
   xlab("Dispersal Diversity (z-score scaled)") +
-  ylab("Stability") +
+  ylab("Effect of dispersal diversity") +
   theme(axis.title.x = element_text(size = 25,face = "bold"),
         axis.title.y = element_text(size = 25, face = "bold"),
         axis.text.x = element_text(size = 15),
         axis.text.y = element_text(size = 15))
 
-dataset_smoothed_plot
+FEve_partial_resid_plot
 
-ggsave(here("analysis", "figures", "MarineCommunityStab GAM.png"),
-       dataset_smoothed_plot,
+effectivesp_partial_resid_plot <-
+  ggplot(data = disperse_div_predictions, aes(y = effectivesp_fit + resid, x = Z_effectivesp)) +
+  geom_point() +
+  geom_line(aes(y = effectivesp_fit),
+            colour = "blue", size = 1.2) +
+  geom_ribbon(aes(ymin = effectivesp_fit - 1.96*effectivesp_se,
+                  ymax = effectivesp_fit + 1.96*effectivesp_se),
+              fill = "blue", alpha = 0.2) +
+  theme_bw() +
+  xlab("Taxonomic diversity (z-score scaled)") +
+  ylab("Effect of taxonomic diversity\non stability") +
+  theme(axis.title.x = element_text(size = 25,face = "bold"),
+        axis.title.y = element_text(size = 25, face = "bold"),
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15))
+
+effectivesp_partial_resid_plot
+
+diversity_effects_plot <- FEve_partial_resid_plot + effectivesp_partial_resid_plot
+
+ggsave(here("analysis", "figures", "diversity_effects_gam.png"),
+       diversity_effects_plot ,
        height = 10,
-       width = 15)
+       width = 30)
+
+
+#stratum effect plot
+
+  #the as.vector part is just to make sure this is a vector, and not a 1D matrix, for plotting.
+
+stratum_effect_plot <- gam.stability %>%
+  mutate(stratum_effect = as.vector(term_predictors$fit[,"s(stratum)"])) %>%
+  group_by(stratum) %>%
+  summarize(stratum_effect = stratum_effect[1]) %>%
+  left_join(stratum.shpfile.geom) %>%
+  st_as_sf() %>%
+  ggplot(aes(fill = stratum_effect)) +
+  geom_sf()
