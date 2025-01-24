@@ -71,9 +71,11 @@ plot(
 
 dendogramPlot <- rect.hclust(fish.traits.40NA.UPGMA.reordered, k = 25)
 
+# uncomment this path to save figure
 #ggsave(path = "figures", "dendogramPlot.png", dendogramPlot, width =  10, height = 10)
 
-# Plot the final dendrogram with group colors (RGBCMY...)
+# MIGHT REMOVE THIS SECTION
+#Plot the final dendrogram with group colors (RGBCMY...)
 # Fast method using the additional hcoplot() function:
 # !!! Sourcing the function first
 # source("R/hcoplot.R")
@@ -88,10 +90,10 @@ fish.traits.40NA.clust <- cbind(fish.traits.40NA, clusterID = cutree)
 
 fish.traits.40NA.clust$clusterID <- as.factor(fish.traits.40NA.clust$clusterID)
 
-#Write to CSV to determine what traits define each group
-write.csv(fish.traits.40NA.clust,
-          here("analysis","data","derived_data", "FishTraitsClustered25GR.csv"),
-          row.names = TRUE)
+# uncomment to write to CSV, used to determine what traits define each group
+# write.csv(fish.traits.40NA.clust,
+#           here("analysis","data","derived_data", "FishTraitsClustered25GR.csv"),
+#           row.names = TRUE)
 
 
 ###ADD CLUSTER ID TO ABUND DATA ----

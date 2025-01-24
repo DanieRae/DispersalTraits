@@ -6,12 +6,16 @@
 
 # install.packages("FD")
 # install.packages("skimr")
+# install.packages("mltools")
+# install.packages("data.table")
 
 library(FD)
 library(skimr)
+library(mltools)
+library(data.table)
 
 #Data filtering ----
-# Apply function FUN to each column in the data.frame, returns
+# Apply function 'FUN' to each column in the data.frame, returns
 # a vector containing how many NAs are in a given column
 
 fish.traits.NAs <- apply(fish.traits, FUN = function(x){sum(is.na(x))}, MARGIN = 2)
@@ -22,9 +26,6 @@ fish.traits.40Nas.columns <- names(fish.traits.NAs[fish.traits.NAs <= 40])
 
 fish.traits.40NA <- fish.traits[, fish.traits.40Nas.columns]
 
-#SKIM DATA STRUC #
-skim.40 <- skim(fish.traits.40NA)
-
 #GOWERS MATRIX ----
 #FD package is suppose to be able to use many different data types
 # Calculate the distance matrix using Gower coefficient (S15 in numerical ecology book
@@ -33,7 +34,9 @@ skim.40 <- skim(fish.traits.40NA)
 
 fish.traits.40NA.dist <- gowdis(fish.traits.40NA, asym.bin = NULL)
 
-#ONEHOT----
+#ONEHOT---- might remove this section
 
 fish.traits.40NA.hot <- one_hot(as.data.table(fish.traits.40NA))
-fish.traits.40NA.hot.dist <- gowdis(fish.traits.40NA.hot, asym.bin = NULL)
+
+
+#END ---

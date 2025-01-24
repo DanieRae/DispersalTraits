@@ -2,24 +2,25 @@
 
 # Install and load packages ----
 
-# install.packages("grid")
-# install.packages("gridExtra")
-# install.packages("lme4")
-# install.packages("sjPlot")
-# install.packages("FD")
-# install.packages("sf")
-# install.packages("ggplot2")
-# install.packages("ggforce")
-# install.packages("patchwork")
-# install.packages("dplyr")
-# install.packages("stringr")
-# install.packages("rgdal")
-# install.packages("rgeos")
-# install.packages("proj4")
-# install.packages("spdep")
-# install.packages("mgcv")
-# install.packages("viridis")
-# install.packages("AICcmodavg")
+install.packages("grid")
+install.packages("gridExtra")
+install.packages("lme4")
+install.packages("sjPlot")
+install.packages("FD")
+install.packages("sf")
+install.packages("ggplot2")
+install.packages("ggforce")
+install.packages("patchwork")
+install.packages("dplyr")
+install.packages("stringr")
+install.packages("rgdal")
+install.packages("rgeos")
+install.packages("proj4")
+install.packages("spdep")
+install.packages("mgcv")
+install.packages("viridis")
+install.packages("AICcmodavg")
+
 
 library(grid)
 library(gridExtra)
@@ -31,6 +32,8 @@ library(ggplot2)
 library(ggforce)
 library(patchwork)
 library(dplyr)
+library(tidyr)
+library(data.table)
 library(stringr)
 library(rgdal)
 library(rgeos)
@@ -39,9 +42,11 @@ library(spdep)
 library(mgcv)
 library(viridis)
 library(AICcmodavg)
+library(here)
 
 #FD LOAD --------
 
+# Run page 6.1 first if you don't have the RDS saved
 functional.diversity <- readRDS(here("analysis", "data", "derived_data",
                                      "FunctionalDiv.rds"))
 
@@ -178,8 +183,7 @@ binned.effective.species.FEve <-
 
 lm <- cor.test( ~ Z_FEve + Z_effectivesp,
                 data = stab.feve.species)
-#returns the 95% confidence of the pearc. corr test between the two variables#
-summary(lm)
+lm
 
 ##PLOT - SPDIV/FEVE BINNED ----
 #Effective species/FEve pearson correlation plot
@@ -202,91 +206,13 @@ plot.binned.effective.species.FEve <- stab.feve.species %>%
         axis.title.x = element_text(size = 20),
         axis.title.y = element_text(size = 20)) # title
 
-ggsave(here("analysis","figures",
-            "Influence of Effective Species on Dispersal Diversity.png"),
-       plot.binned.effective.species.FEve,
-       width =  15,
-       height = 10)
+# Uncomment to save figure
+# ggsave(here("analysis","figures",
+#             "Influence of Effective Species on Dispersal Diversity.png"),
+#        plot.binned.effective.species.FEve,
+#        width =  15,
+#        height = 10)
 
-##PLOT - FEVE/TIME ----
-#functional evenness by community over time
-plot.FEve.time <- FEve.comm %>%
-  #filter(stratum %in% c(201, 202, 203, 204, 205, 206, 207, 208, 209, 210)) %>%
-  ggplot(aes(x = year, y = V1)) +
-  geom_point(size = 3) +
-  #geom_text()+
-  theme_bw() +
-  xlab("Year") +
-  ylab("Dispersal Diversity") +
-  ggtitle("Change in Local Community Dispersal Diversity over a 20 Year Period") +
-  geom_smooth() +
-  scale_color_grey() +
-  facet_wrap_paginate( ~ stratum,
-                       nrow = 6,
-                       ncol = 6,
-                       page = 2) +
-  theme(plot.title = element_text(lineheight = .8, size = 20, hjust = 0.5), # title
-        axis.title.x = element_text(size = 15),
-        axis.title.y = element_text(size = 15),
-        #axis.text.x = element_blank(), # remove x axis labels
-        #axis.text.y = element_blank(), # remove y axis labels
-        axis.ticks = element_blank(), # remove axis ticks
-        panel.grid.major = element_blank(),
-        #panel.grid.minor = element_blank(), # remove grid lines
-        strip.text.x = element_text(size = 14,vjust = 0, face = "bold",
-                                    family = "Arial Narrow"),
-        legend.position = "none")
-
-
-# should I do this all again in the clusters?
-
-
-#FD/depth plot----
-
-# FD.Depth.Year <- stratum.FE.depth %>%
-#   filter(year_surv %in% c(1995, 2000, 2005, 2010, 2015, 2017)) %>%
-#   ggplot(aes(x = depth, y = Unique_FE)) +
-#   geom_point() +
-#   geom_smooth() +
-#   facet_wrap( ~ year_surv) +
-#   labs(x = "Stratum Depth", y = "Fungtional Groups")
-#
-# FEve.comm.depth <-
-#   merge (x = FEve.comm, y = stratum.new, by = "stratum") %>%
-#   sf::st_as_sf()
-#
-# FEve.Depth.Year <- FEve.comm.depth %>%
-#   filter(year %in% c(1995, 2000, 2005, 2010, 2015, 2017)) %>%
-#   ggplot(aes(x = depth, y = V1)) +
-#   geom_point() +
-#   geom_smooth() +
-#   facet_wrap( ~ year) +
-#   labs(x = "Stratum Depth", y = "Fungtional Evenness")
-#
-
-#Need to figure out how to select the first and last year in every bin
-FEve.lag <- FEve.bin %>%
-  #sd of the binned years
-  filter(year %in% c(1995, 2000, 2005, 2010, 2015))
-
-##PLOT - Mean FEve with logsd Biomass ----
-plot.meanfeve <- abun.feve.bin %>%
-  filter(stratum %in% c(201:230)) %>%
-  ggplot(aes(x = bin_mean_FEve, y = log(bin_sd_biomass))) +
-  labs(title = "Temporal varation in biomass for NFL as a response to community functional evenness") +
-  xlab("Mean Functional Evenness") +
-  ylab("log(sd(biomass))") +
-  geom_point(aes(color = new_bin)) +
-  geom_path() +
-  theme() +
-  facet_wrap( ~ stratum)
-
-# ggsave(
-#   "Biomass stability (sd) with FEve (mean).png",
-#   plot.meanfeve,
-#   width =  10,
-#   height = 10
-# )
 
 
 ##PLOT - STAB/FEVE LOCAL ***ask eric----
@@ -317,6 +243,7 @@ abun.feve.bin %>%
                                     family = "Arial Narrow"),
         legend.position = "none")
 
+####NEED TO CLEAN PAST HERE####
 
 #RATE OF BIOMASS CHANGE ----
 
@@ -351,7 +278,6 @@ plot.ratechange
 
 
 
-
 #have to scale the variables as they have different scales
 abun.feve.bin.noNA$Z_FEve <- scale(abun.feve.bin.noNA$bin_mean_FEve)
 abun.feve.bin.noNA$Z_sdbio <-
@@ -378,46 +304,3 @@ plot(
 )
 abline(0, 0, lty = 2)
 #there is a lot of variation around the means, this indicates that these factors should be included
-
-###Lets try with glm #WHY YOU NO WORK
-# glm1 <- glmer(Z_sdbio ~ Z_FEve + (1|stratum) + (1|new_bin),
-#   data = abun.feve.bin.noNA,
-#   family = gaussian(link = "log"),
-#   start = 0)
-#
-# source(file = "R/glmm_funs.R")
-#
-# if (!require("coefplot2")) {
-#   remotes::install_github(
-#     "palday/coefplot2",
-#     subdir = "pkg",
-#     upgrade = "always",
-#     quiet = TRUE
-#   )
-# }
-#
-# library(coefplot2)
-# overdisp_fun(glm1)
-#
-# summary(glm1)
-# tab_model(glm1)
-# sjPlot::plot_model(glm1)
-#
-# effects.V1 <- effect(term = "V1", mod = glm1)
-# effects.V1 <- as.data.frame(effects.V1)
-#
-# abun.feve.bin.noNA.fit <-
-#   filter(abun.feve.bin.noNA, stratum %in% c(201:202))
-#
-#
-# ggplot() +
-#   geom_point(data = rate.feve.noNA.fit, aes(x = V1, y = sd2.rate.change)) +
-#   geom_point(data = effects.V1, aes(x = V1, y = fit), color = "red") +
-#   geom_line(data = effects.V1, aes(x = V1, y = fit), color = "red") +
-#   geom_ribbon(
-#     data = effects.V1,
-#     aes(x = V1, ymin = lower, ymax = upper),
-#     alpha = 0.3,
-#     fill = "red"
-#   ) +
-#   facet_wrap( ~ stratum)

@@ -1,17 +1,19 @@
 # Install and load packages ----
 
-# install.packages("dplyr")
-# install.packages("tidyr")
-# install.packages("stringr")
-# install.packages("devtools")
-# install.packages("mltools")
-# install.packages("data.table")
-# install.packages("vegan")
-# install.packages("ade4")
-# install.packages("adespatial")
-# install.packages("reshape")
-# install.packages("skimr")
-# install.packages("sf")
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("stringr")
+install.packages("devtools")
+install.packages("mltools")
+install.packages("data.table")
+install.packages("vegan")
+install.packages("ade4")
+install.packages("adespatial")
+install.packages("reshape")
+install.packages("skimr")
+install.packages("sf")
+install.packages("here")
+
 
 library(dplyr)
 library(tidyr)
@@ -37,11 +39,10 @@ raw.fish.traits <-
            stringsAsFactors = TRUE)
 
 
-#need to cut out all the dead space after the last species, not sure why that was there but bye bye#
+##Remove spaces ----
 fish.traits <- raw.fish.traits %>% droplevels()
 
 #making species name the row names and shortening them #
-#might want to remove this as it is causing problems with the visuals on the plots#
 rownames(fish.traits) <- fish.traits[, 1]
 fish.traits[, 1] <- NULL
 
@@ -52,7 +53,7 @@ new_rownames[new_rownames == "Myo_sco"] <-
   c("Myo_sco_1", "Myo_sco_2")
 rownames(fish.traits) <- sort(new_rownames, decreasing = FALSE)
 
-#quick mutate to remove negative values in these columns#
+#Mutate to remove negative values in these columns#
 fish.traits <- fish.traits %>%
   mutate(
     Fresh = abs(Fresh),
@@ -60,7 +61,7 @@ fish.traits <- fish.traits %>%
     Saltwater = abs(Saltwater)
   )
 
-#data cleaning of unnecessary columns, such as references#
+#data cleaning of unnecessary columns, ex. references#
 fish.traits <-
   select(
     fish.traits,
@@ -121,16 +122,13 @@ fish.traits <-
     )
   )
 
-#removing rows with missing larval strategy, this is considered an important trait#
-#that needs to be available for all species#
+#removing rows(species) with missing larval strategy#
 fish.traits <- fish.traits[!is.na(fish.traits$LarvalStrategy), ]
 
-#skimming data for structure
-skim.tot <- skim(fish.traits)
 
 # PART TWO - Fish abundance data ----
 
-##Load/clean fish abundance data----
+##Load and clean fish abundance data----
 raw.fish.abun <-
   read.csv(here("analysis", "data", "raw_data", "tabular",
                 "NL_Biomass.csv"), fileEncoding = "UTF-8-BOM")
@@ -138,8 +136,7 @@ raw.fish.abun <-
 #This takes the species list and puts it into a character#
 species_name <- raw.fish.abun$taxa_name
 
-#We are taking the character to then change the species names from all CAPS #
-#to just having the first letter in CAP, returns better data#
+#Change the species names from all CAPS to just having the first letter in CAP#
 species_name <- str_to_sentence(species_name)
 
 #Shortening the names to match#
@@ -220,8 +217,7 @@ stratum.shpfile.adjusted <- st_read(here("analysis", "data", "derived_data", "sp
   filter(stratum %in% strata.keep)
 
 ##Stratum Depth  ----
-stratum.depth <- read.csv(here("analysis", "data", "raw_data", "tabular",
-                               "stratum_depth.csv"))
+stratum.depth <- st_read("stratum_depth.csv")
 
 stratum.depth$depth.ave <- as.numeric(stratum.depth$depth.ave)
 
