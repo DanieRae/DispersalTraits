@@ -155,78 +155,78 @@ map.depth <- stratum.depth.geom %>%
         #axis.ticks = element_blank(), # remove axis ticks
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), # remove grid lines
-        legend.position = "bottom",
-        legend.key.size = unit(0.5, 'cm'),
+        legend.position = c(0.05, 0.0), # Adjust coordinates to your preference
+        legend.justification = c("left","bottom"),# Optional: Adjust justification of the legend box
+        legend.direction = "horizontal",
+        legend.key.size = unit(0.8, 'cm'),
         legend.text = element_text(face = "bold"))
 
 map.depth
 # ggsave(here("analysis", "figures", "StratumDepth.png"),
 #             map.depth, width =  10, height = 10)
 
-## NFL MAp
-
-map.nfl <- stratum.shpfile %>%
-  ggplot() +
-  geom_sf(aes(fill = VIV),
-          color = "black",
-          size = 0.1)+
-  coord_sf (xlim = c(-65, -47))+
-  # scale_fill_cmocean(name = "deep")+
-  # theme_light() +
-  # labs(fill = "Depth (m)", colour = "") + # legend titles
-  theme(plot.title = element_text(lineheight = .8, size = 15, hjust = 0.2), # title
-        axis.text.x = element_text(color = "black", size = 12), # remove x axis labels
-        axis.text.y = element_text(color = "black", size = 12), # remove y axis labels
-        #axis.ticks = element_blank(), # remove axis ticks
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), # remove grid lines
-        legend.position = "bottom",
-        legend.key.size = unit(0.5, 'cm'),
-        legend.text = element_text(face = "bold"))
-
 
 # NFL Map
-canada <- ne_countries(country = "Canada", scale = "medium", returnclass = "sf")
-ocean <- ne_download(scale = "medium", type = "ocean", category = "physical", returnclass = "sf")
+#Load NAFO divisions
 
+crs_proj <- 32622  # UTM Zone 22N
 
-nafo <-
-  st_read(here
-           ("analysis", "data", "raw_data", "spatial","nafo division"))
+# Transform both layers
+nafo_proj <- st_transform(nafo_crop, crs_proj)
+canada_proj <- st_transform(canada_crop, crs_proj)
 
-# Define bounding box or use st_crop
-bbox <- st_bbox(c(xmin = -65, xmax = -50, ymin = 40, ymax = 55), crs = st_crs(nafo))
+# Create a label point column using projected CRS
+nafo_proj <- nafo_proj %>%
+  mutate(label_pt = st_centroid(geometry))
 
-canada_crop <- st_crop(canada, bbox)
-nafo_crop <- st_crop(nafo, bbox)
+#Manually fixing the position of some labels
+nafo_proj$label_pt[nafo_proj$Division == "4T"] <- st_sfc(st_point(c(-364927.1, 5305732)), crs = crs_proj)
+nafo_proj$label_pt[nafo_proj$Division == "4W"] <- st_sfc(st_point(c(-266927.1, 5061524)), crs = crs_proj)
+nafo_proj$label_pt[nafo_proj$line_id == "4R-1"] <- st_sfc(st_point(c(0, 0)), crs = crs_proj)
 
-ggplot() +
-  geom_sf(data = ocean, fill = "lightblue") +
-  geom_sf(data = canada_crop, fill = "grey80") +
-  geom_sf(data = nafo_crop, fill = NA, color = "red", size = 0.5) +
-  coord_sf(xlim = c(-65, -50), ylim = c(40, 55)) +
+# automatically creaking the dimension of the map
+bbox_proj <- st_bbox(c(xmin = -623435.4, xmax = 1054576.3 , ymin = 4983720.4, ymax = 6550203.4), crs = st_crs(crs_proj))
+
+#plot the map
+NFL.MAP <- ggplot() +
+  # Optional: ocean background
+  geom_sf(data = st_as_sfc(bbox_proj), fill = "lightblue", color = NA) +
+  # Canada landmass
+  geom_sf(data = canada_proj, fill = "darkseagreen", color = "black", size = 0.3) +
+  #label landmass
+      annotate("text", x = 120085.99, y =  5398478, label = "Newfoundland", color = "Black", size =3) +
+  # NAFO divisions
+  geom_sf(data = nafo_proj, fill = NA, color = "gray10", size = 0.4) +
+  # Labels (now safely centered)
+  geom_sf_text(
+    data = nafo_proj %>%
+      filter(!Division %in% c("4R-1", "0-B", "4X")),
+    aes(geometry = label_pt, label = Division),
+    stat = "sf_coordinates",
+    size = 3, color = "black"
+  ) +
+  coord_sf(xlim = c(bbox_proj["xmin"], bbox_proj["xmax"]),
+           ylim = c(bbox_proj["ymin"], bbox_proj["ymax"]),
+           expand = FALSE) +
   theme_minimal() +
-  labs(title = "NAFO Divisions off the Coast of Newfoundland")
+  theme(
+    panel.background = element_rect(fill = "white"),
+    panel.grid = element_line(color = "gray90"),
+    axis.text.x = element_text(color = "black", size = 12),
+    axis.text.y = element_text(color = "black", size = 12),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
 
-nafo_crop$centroid <- st_centroid(nafo_crop$geometry)
-nafo_crop$label_point <- st_point_on_surface(nafo_crop$geometry)
+      )
 
-ggplot() +
-  geom_sf(data = ocean, fill = "lightblue") +
-  geom_sf(data = canada_crop, fill = "grey80") +
-  geom_sf(data = nafo_crop, fill = NA, color = "red") +
-  geom_sf_text(data = nafo_crop, aes(geometry = label_point,label = Division), size = 3, color = "black") +
-  coord_sf(xlim = c(-65, -50), ylim = c(42, 58)) +
-  labs(title = "NAFO Divisions off Newfoundland")+
-  theme(plot.title = element_text(lineheight = .8, size = 15, hjust = 0.2), # title
-      axis.text.x = element_text(color = "black", size = 9), # remove x axis labels
-      axis.text.y = element_text(color = "black", size = 9), # remove y axis labels
-      #axis.ticks = element_blank(), # remove axis ticks
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(), # remove grid lines
-      legend.position = "bottom",
-      legend.key.size = unit(0.5, 'cm'),
-      legend.text = element_text(face = "bold"))
+NFL.MAP
+# ggsave(here("analysis", "figures", "NFL.MAP.png"),
+#             map.depth, width =  10, height = 10)
 
+# Figure 1
+#need to match the latitude limits
+
+figure1<-NFL.MAP+map.depth
 
 #END-----
+
