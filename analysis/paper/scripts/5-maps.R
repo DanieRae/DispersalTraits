@@ -168,12 +168,21 @@ map.depth
 
 # NFL Map
 #Load NAFO divisions
+nafo <- st_read(here ("analysis", "data","raw_data","spatial","nafo division"))
 
+
+# Get Canada and ocean basemap
+canada <- ne_countries(country = "Canada", scale = "medium", returnclass = "sf")
+ocean <- ne_download(scale = "medium", type = "ocean", category = "physical", returnclass = "sf")
+
+# Define times zone
 crs_proj <- 32622  # UTM Zone 22N
 
+
 # Transform both layers
-nafo_proj <- st_transform(nafo_crop, crs_proj)
-canada_proj <- st_transform(canada_crop, crs_proj)
+nafo_proj <- st_transform(nafo, crs_proj)
+canada_proj <- st_transform(canada, crs_proj)
+
 
 # Create a label point column using projected CRS
 nafo_proj <- nafo_proj %>%
@@ -181,11 +190,16 @@ nafo_proj <- nafo_proj %>%
 
 #Manually fixing the position of some labels
 nafo_proj$label_pt[nafo_proj$Division == "4T"] <- st_sfc(st_point(c(-364927.1, 5305732)), crs = crs_proj)
-nafo_proj$label_pt[nafo_proj$Division == "4W"] <- st_sfc(st_point(c(-266927.1, 5061524)), crs = crs_proj)
+nafo_proj$label_pt[nafo_proj$Division == "4W"] <- st_sfc(st_point(c(-276927.1, 4950524)), crs = crs_proj)
 nafo_proj$label_pt[nafo_proj$line_id == "4R-1"] <- st_sfc(st_point(c(0, 0)), crs = crs_proj)
+nafo_proj$label_pt[nafo_proj$Division == "3O"] <- st_sfc(st_point(c(366927.1, 4950524)), crs = crs_proj)
+nafo_proj$label_pt[nafo_proj$Division == "3N"] <- st_sfc(st_point(c(656927.1, 4950524)), crs = crs_proj)
+nafo_proj$label_pt[nafo_proj$Division == "3M"] <- st_sfc(st_point(c(906927.1, 5150524)), crs = crs_proj)
+nafo_proj$label_pt[nafo_proj$line_id == "4Vs"] <- st_sfc(st_point(c(-6927.1, 4950524)), crs = crs_proj)
+nafo_proj$label_pt[nafo_proj$line_id == "4S"] <- st_sfc(st_point(c(-206927.1, 5470524)), crs = crs_proj)
 
 # automatically creaking the dimension of the map
-bbox_proj <- st_bbox(c(xmin = -623435.4, xmax = 1054576.3 , ymin = 4983720.4, ymax = 6550203.4), crs = st_crs(crs_proj))
+bbox_proj <- st_bbox(c(xmin = -603435.4, xmax = 1004576.3 , ymin = 4883720.4, ymax = 6650203.4), crs = st_crs(crs_proj))
 
 #plot the map
 NFL.MAP <- ggplot() +
@@ -221,12 +235,15 @@ NFL.MAP <- ggplot() +
 
 NFL.MAP
 # ggsave(here("analysis", "figures", "NFL.MAP.png"),
-#             map.depth, width =  10, height = 10)
+#        NFL.MAP, width =  10, height = 10)
 
 # Figure 1
 #need to match the latitude limits
 
 figure1<-NFL.MAP+map.depth
+# ggsave(here("analysis", "figures", "figure1.png"),
+#        figure1, width =  10, height = 10)
+
 
 #END-----
 

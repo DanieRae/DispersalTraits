@@ -1,18 +1,18 @@
 # Install and load packages ----
 
-install.packages("dplyr")
-install.packages("tidyr")
-install.packages("stringr")
-install.packages("devtools")
-install.packages("mltools")
-install.packages("data.table")
-install.packages("vegan")
-install.packages("ade4")
-install.packages("adespatial")
-install.packages("reshape")
-install.packages("skimr")
-install.packages("sf")
-install.packages("here")
+# install.packages("dplyr")
+# install.packages("tidyr")
+# install.packages("stringr")
+# install.packages("devtools")
+# install.packages("mltools")
+# install.packages("data.table")
+# install.packages("vegan")
+# install.packages("ade4")
+# install.packages("adespatial")
+# install.packages("reshape")
+# install.packages("skimr")
+# install.packages("sf")
+# install.packages("here")
 
 
 library(dplyr)
@@ -226,3 +226,4 @@ stratum.depth<-
 stratum.depth$depth.ave <- as.numeric(stratum.depth$depth.ave)
 
 #END#
+

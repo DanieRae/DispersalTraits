@@ -9,6 +9,7 @@
 
 library(ggplot2)
 library(here)
+library(dplyr)
 
 # CMDSCALE - PCoA ----
 # multidimensional scaling, to return a set of points that reflect the
@@ -125,6 +126,6 @@ PCOAplot <- PCOA.plot + geom_segment(
 
 
 # uncomment to save PCOAplot
-# ggsave(path = here("analysis","figures"), "PCOAplot.png",
-#        PCOAplot, width =  10, height = 10)
+ggsave(path = here("analysis","figures"), "PCOAplot.png",
+       PCOAplot, width =  10, height = 10)
 
