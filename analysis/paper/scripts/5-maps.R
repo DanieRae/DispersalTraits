@@ -198,8 +198,17 @@ nafo_proj$label_pt[nafo_proj$Division == "3M"] <- st_sfc(st_point(c(906927.1, 51
 nafo_proj$label_pt[nafo_proj$line_id == "4Vs"] <- st_sfc(st_point(c(-6927.1, 4950524)), crs = crs_proj)
 nafo_proj$label_pt[nafo_proj$line_id == "4S"] <- st_sfc(st_point(c(-206927.1, 5470524)), crs = crs_proj)
 
+
 # automatically creaking the dimension of the map
-bbox_proj <- st_bbox(c(xmin = -603435.4, xmax = 1004576.3 , ymin = 4883720.4, ymax = 6650203.4), crs = st_crs(crs_proj))
+bbox_latlon <- st_bbox(c(
+  xmin = -62, xmax = -45,
+  ymin = 42, ymax = 58
+), crs = st_crs(4326)) %>%
+  st_as_sfc()
+
+# Transform bbox into UTM CRS
+bbox_proj <- st_transform(bbox_latlon, 32622) %>% st_bbox()
+
 
 #plot the map
 NFL.MAP <- ggplot() +
@@ -211,6 +220,8 @@ NFL.MAP <- ggplot() +
       annotate("text", x = 120085.99, y =  5398478, label = "Newfoundland", color = "Black", size =3) +
   # NAFO divisions
   geom_sf(data = nafo_proj, fill = NA, color = "gray10", size = 0.4) +
+  # NFL shelves
+  geom_sf(data = stratum.shpfile.raw, fill = "magenta",alpha = 0.4, color = "NA") +
   # Labels (now safely centered)
   geom_sf_text(
     data = nafo_proj %>%
@@ -234,15 +245,15 @@ NFL.MAP <- ggplot() +
       )
 
 NFL.MAP
-# ggsave(here("analysis", "figures", "NFL.MAP.png"),
-#        NFL.MAP, width =  10, height = 10)
+ggsave(here("analysis", "figures", "NFL.MAP.png"),
+       NFL.MAP, width =  10, height = 10)
 
 # Figure 1
 #need to match the latitude limits
 
 figure1<-NFL.MAP+map.depth
-# ggsave(here("analysis", "figures", "figure1.png"),
-#        figure1, width =  10, height = 10)
+ggsave(here("analysis", "figures", "figure1.png"),
+       figure1, width =  15, height = 10)
 
 
 #END-----
