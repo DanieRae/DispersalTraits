@@ -1,17 +1,18 @@
 #LIBRARIES ----
 # install.packages("devtools")
 # devtools::install_github("pedersen-fisheries-lab/sspm")
-# if you wish to build the vignettes:
+# # if you wish to build the vignettes:
 # devtools::install_github("pedersen-fisheries-lab/sspm", build_vignettes = TRUE)
 
 library(sspm)
 library(patchwork)
+library(dplyr)
+library(stringr)
 
 
 # Make SSPM model ----
-
 stratum.shpfile.abun <-
-  merge(stratum.shpfile.adjusted, abun.feve.bin.noNA, by = "stratum")
+  merge(stratum.shpfile.adjusted, stab.feve.species, by = "stratum")
 
 # The package needs to think we are using points, so we make some
 stratum_points <- stratum.shpfile.abun %>%
@@ -63,12 +64,6 @@ bound <- spm_as_boundary(stratum.shpfile.abun.combined,
                                           "stratum"), points = NULL)
 
 
-# dataset_smoothed <- dataset %>%
-#   spm_smooth(bin_mean_biomass ~ stratum + new_bin + smooth_space(bs = "mrf"),
-#              boundaries = bound,
-#              family = tw)
-
-
 #Val written model with spm, using predctor variable that is not easily accepted by spm
 dataset_smoothed <- dataset %>%
   spm_smooth(inverse_sd ~ Z_FEve + smooth_space(bs = "mrf"),
@@ -78,7 +73,7 @@ dataset_smoothed <- dataset %>%
 
 fit <- spm_smoothed_fit(dataset_smoothed)[[1]]
 
-#Exploring gams with eric ----
+#------Erics GAM code ----
 
 # helper function
 stratum_mrf <- sspm:::ICAR(data_frame = dataset@data, boundaries = bound,
@@ -87,14 +82,16 @@ stratum_mrf <- sspm:::ICAR(data_frame = dataset@data, boundaries = bound,
 #penalty
 stratum_mrf_pen <- sspm:::ICAR_space(patches = stratum.shpfile.geom, space = "stratum")
 
-stratum.abun.mut <- stratum.abun %>%
-  mutate(stratum = as.factor(stratum))
+# Make sure stratum is a factor
+stratum.abun$stratum <- factor(stratum.abun$stratum)
 
 #MODEL ----
 gam.stability <-
   gam(
-    log((bin_sd_biomass)^-1) ~ Z_FEve +Z_effectivesp + s(new_bin, bs = "re", k = 6) + s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 200),
-    data = stratum.abun.mut,
+    log(inverse_sd) ~ Z_FEve +Z_effectivesp +
+      s(new_bin, bs = "re", k = 6) +
+      s(stratum, bs = "mrf", xt = list(penalty = stratum_mrf_pen), k= 200),
+    data = stratum.abun,
     method = "REML",
     type = "terms",
     family = gaussian()
@@ -104,11 +101,11 @@ gam.check(gam.stability, rep = 500)
 plot(gam.stability)
 
 
-##ERICS CODE ----
+##------ERICS CODE ----
 summary(gam.stability)
 term_predictors <- predict(gam.stability, type = "terms", se.fit = TRUE)
 
-disperse_div_predictions <- stratum.abun.mut %>%
+disperse_div_predictions <- stratum.abun %>%
   mutate(
     #fitted values for each term for confidence intervals
     FEve_fit = as.vector(term_predictors$fit[,"Z_FEve"]),
@@ -167,7 +164,7 @@ ggsave(here("analysis", "figures", "diversity_effects_gam.png"),
 
 #stratum effect plot
 
-  #the as.vector part is just to make sure this is a vector, and not a 1D matrix, for plotting.
+#the as.vector part is just to make sure this is a vector, and not a 1D matrix, for plotting.
 
 stratum_effect_plot <- gam.stability %>%
   mutate(stratum_effect = as.vector(term_predictors$fit[,"s(stratum)"])) %>%
